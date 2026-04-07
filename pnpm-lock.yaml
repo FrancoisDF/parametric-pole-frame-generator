@@ -12,8 +12,8 @@ importers:
         specifier: ^8.0.0
         version: 8.5.6(svelte@5.55.1)(three@0.170.0)
       '@threlte/extras':
-        specifier: ^8.0.0
-        version: 8.12.3(@types/three@0.170.0)(svelte@5.55.1)(three@0.170.0)
+        specifier: ^9.0.0
+        version: 9.14.4(@types/three@0.170.0)(svelte@5.55.1)(three@0.170.0)
       three:
         specifier: ^0.170.0
         version: 0.170.0
@@ -394,11 +394,11 @@ packages:
       svelte: '>=5'
       three: '>=0.160'
 
-  '@threlte/extras@8.12.3':
-    resolution: {integrity: sha512-k9unMkaFlYpJbwAkzrwEyCOxvLtpvOH/pGghvuj0ODj2kdLuHter39xhKGzdIYc+WlEfxRf2+Kx6ZVhcL+IEaw==}
+  '@threlte/extras@9.14.4':
+    resolution: {integrity: sha512-3no8nEpF9YHIWZWJqp2tP/QaPTd+YzuuMmfpuoKKf60MEPx8UfrXB8iiI4e/LZ65Y3wduPJ9tanfbhgbnxvV1g==}
     peerDependencies:
-      svelte: '>=4'
-      three: '>=0.152'
+      svelte: '>=5'
+      three: '>=0.160'
 
   '@tweenjs/tween.js@23.1.3':
     resolution: {integrity: sha512-vJmvvwFxYuGnF2axRtPYocag6Clbb5YS7kLL+SO/TeVFzHqDIWrNKYtcsPMibjDx9O+bu+psAy9NKfWklassUA==}
@@ -485,6 +485,12 @@ packages:
   camelcase-css@2.0.1:
     resolution: {integrity: sha512-QOSvevhslijgYwRx6Rv7zKdMF8lbRmx+uQGx2+vDc+KI/eBnsy9kit5aj23AgGu3pa4t9AgwbnXWqS+iOY+2aA==}
     engines: {node: '>= 6'}
+
+  camera-controls@3.1.2:
+    resolution: {integrity: sha512-xkxfpG2ECZ6Ww5/9+kf4mfg1VEYAoe9aDSY+IwF0UEs7qEzwy0aVRfs2grImIECs/PoBtWFrh7RXsQkwG922JA==}
+    engines: {node: '>=22.0.0', npm: '>=10.5.1'}
+    peerDependencies:
+      three: '>=0.126.1'
 
   caniuse-lite@1.0.30001786:
     resolution: {integrity: sha512-4oxTZEvqmLLrERwxO76yfKM7acZo310U+v4kqexI2TL1DkkUEMT8UijrxxcnVdxR3qkVf5awGRX+4Z6aPHVKrA==}
@@ -964,15 +970,20 @@ packages:
     peerDependencies:
       three: '>=0.125.0'
 
-  three-mesh-bvh@0.7.6:
-    resolution: {integrity: sha512-rCjsnxEqR9r1/C/lCqzGLS67NDty/S/eT6rAJfDvsanrIctTWdNoR4ZOGWewCB13h1QkVo2BpmC0wakj1+0m8A==}
+  three-mesh-bvh@0.9.9:
+    resolution: {integrity: sha512-FJKitcjvbALmeQRK+Sc+nLGorCpkrZBrbgJZFzhdyWboak37DZikn46hvQkNqSbJPm227ahYmS6k3N/GXaAyXw==}
     peerDependencies:
-      three: '>= 0.151.0'
+      three: '>= 0.159.0'
 
   three-perf@1.0.11:
     resolution: {integrity: sha512-OgBpZjwL+csQKGKZjpkH/QHdbGFMxqngMbSEJeSnVNfXDYd6On7WHNv/GhUZH4YxIpNMwMahBWrNnsJvnbSJHQ==}
     peerDependencies:
       three: '>=0.170'
+
+  three-viewport-gizmo@2.2.0:
+    resolution: {integrity: sha512-Jo9Liur1rUmdKk75FZumLU/+hbF+RtJHi1qsKZpntjKlCYScK6tjbYoqvJ9M+IJphrlQJF5oReFW7Sambh0N4Q==}
+    peerDependencies:
+      three: '>=0.162.0 <1.0.0'
 
   three@0.170.0:
     resolution: {integrity: sha512-FQK+LEpYc0fBD+J8g6oSEyyNzjp+Q7Ks1C568WWaoMRLW+TkNNWmenWeGgJjV105Gd+p/2ql1ZcjYvNiPZBhuQ==}
@@ -989,18 +1000,8 @@ packages:
     resolution: {integrity: sha512-sf4i37nQ2LBx4m3wB74y+ubopq6W/dIzXg0FDGjsYnZHVa1Da8FH853wlL2gtUhg+xJXjfk3kUZS3BRoQeoQBQ==}
     engines: {node: '>=6'}
 
-  troika-three-text@0.49.1:
-    resolution: {integrity: sha512-lXGWxgjJP9kw4i4Wh+0k0Q/7cRfS6iOME4knKht/KozPu9GcFA9NnNpRvehIhrUawq9B0ZRw+0oiFHgRO+4Wig==}
-    peerDependencies:
-      three: '>=0.125.0'
-
   troika-three-text@0.52.4:
     resolution: {integrity: sha512-V50EwcYGruV5rUZ9F4aNsrytGdKcXKALjEtQXIOBfhVoZU9VAqZNIoGQ3TMiooVqFAbR1w15T+f+8gkzoFzawg==}
-    peerDependencies:
-      three: '>=0.125.0'
-
-  troika-three-utils@0.49.0:
-    resolution: {integrity: sha512-umitFL4cT+Fm/uONmaQEq4oZlyRHWwVClaS6ZrdcueRvwc2w+cpNQ47LlJKJswpqtMFWbEhOLy0TekmcPZOdYA==}
     peerDependencies:
       three: '>=0.125.0'
 
@@ -1008,9 +1009,6 @@ packages:
     resolution: {integrity: sha512-NORAStSVa/BDiG52Mfudk4j1FG4jC4ILutB3foPnfGbOeIs9+G5vZLa0pnmnaftZUGm4UwSoqEpWdqvC7zms3A==}
     peerDependencies:
       three: '>=0.125.0'
-
-  troika-worker-utils@0.49.0:
-    resolution: {integrity: sha512-1xZHoJrG0HFfCvT/iyN41DvI/nRykiBtHqFkGaGgJwq5iXfIZFBiPPEHFpPpgyKM3Oo5ITHXP5wM2TNQszYdVg==}
 
   troika-worker-utils@0.52.0:
     resolution: {integrity: sha512-W1CpvTHykaPH5brv5VHLfQo9D1OYuo0cSBEUQFFT/nBUzM8iD6Lq2/tgG/f1OelbAS1WtaTPQzE5uM49egnngw==}
@@ -1298,14 +1296,16 @@ snapshots:
       svelte: 5.55.1
       three: 0.170.0
 
-  '@threlte/extras@8.12.3(@types/three@0.170.0)(svelte@5.55.1)(three@0.170.0)':
+  '@threlte/extras@9.14.4(@types/three@0.170.0)(svelte@5.55.1)(three@0.170.0)':
     dependencies:
       '@threejs-kit/instanced-sprite-mesh': 2.5.1(@types/three@0.170.0)(three@0.170.0)
+      camera-controls: 3.1.2(three@0.170.0)
       svelte: 5.55.1
       three: 0.170.0
-      three-mesh-bvh: 0.7.6(three@0.170.0)
+      three-mesh-bvh: 0.9.9(three@0.170.0)
       three-perf: 1.0.11(three@0.170.0)
-      troika-three-text: 0.49.1(three@0.170.0)
+      three-viewport-gizmo: 2.2.0(three@0.170.0)
+      troika-three-text: 0.52.4(three@0.170.0)
     transitivePeerDependencies:
       - '@types/three'
 
@@ -1384,6 +1384,10 @@ snapshots:
       update-browserslist-db: 1.2.3(browserslist@4.28.2)
 
   camelcase-css@2.0.1: {}
+
+  camera-controls@3.1.2(three@0.170.0):
+    dependencies:
+      three: 0.170.0
 
   caniuse-lite@1.0.30001786: {}
 
@@ -1838,7 +1842,7 @@ snapshots:
       three: 0.170.0
       troika-three-utils: 0.52.4(three@0.170.0)
 
-  three-mesh-bvh@0.7.6(three@0.170.0):
+  three-mesh-bvh@0.9.9(three@0.170.0):
     dependencies:
       three: 0.170.0
 
@@ -1847,6 +1851,10 @@ snapshots:
       three: 0.170.0
       troika-three-text: 0.52.4(three@0.170.0)
       tweakpane: 3.1.10
+
+  three-viewport-gizmo@2.2.0(three@0.170.0):
+    dependencies:
+      three: 0.170.0
 
   three@0.170.0: {}
 
@@ -1861,14 +1869,6 @@ snapshots:
 
   totalist@3.0.1: {}
 
-  troika-three-text@0.49.1(three@0.170.0):
-    dependencies:
-      bidi-js: 1.0.3
-      three: 0.170.0
-      troika-three-utils: 0.49.0(three@0.170.0)
-      troika-worker-utils: 0.49.0
-      webgl-sdf-generator: 1.1.1
-
   troika-three-text@0.52.4(three@0.170.0):
     dependencies:
       bidi-js: 1.0.3
@@ -1877,15 +1877,9 @@ snapshots:
       troika-worker-utils: 0.52.0
       webgl-sdf-generator: 1.1.1
 
-  troika-three-utils@0.49.0(three@0.170.0):
-    dependencies:
-      three: 0.170.0
-
   troika-three-utils@0.52.4(three@0.170.0):
     dependencies:
       three: 0.170.0
-
-  troika-worker-utils@0.49.0: {}
 
   troika-worker-utils@0.52.0: {}
 
