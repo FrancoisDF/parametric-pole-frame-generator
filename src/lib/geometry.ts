@@ -13,6 +13,19 @@ const _fontLoader = new FontLoader();
 const _font = _fontLoader.parse(fontJson as any);
 
 /**
+ * STL export only needs position + normal.
+ * Strip every other attribute (e.g. uv, uv2 added by ExtrudeGeometry/TextGeometry)
+ * so that mergeGeometries never sees attribute-set mismatches across geometry types.
+ */
+function stripToPositionNormal(geo: THREE.BufferGeometry): void {
+  for (const name of Object.keys(geo.attributes)) {
+    if (name !== 'position' && name !== 'normal') {
+      geo.deleteAttribute(name);
+    }
+  }
+}
+
+/**
  * Builds a merged BufferGeometry for STL export.
  * When splitEnabled, the model is divided into sections arranged in a
  * grid layout with 5 mm gaps, each with an embossed row.col label.
@@ -31,7 +44,16 @@ export function buildExportGeometry(params: Params): THREE.BufferGeometry {
 // ─── Single-piece build (original behaviour) ──────────────────────────────────
 
 function buildSingleGeometry(params: Params): THREE.BufferGeometry {
-  const { spacing, poleDiameter, poleShape, minHeight, maxHeight, baseHeight, heightFunction, waveFrequency } = params;
+  const {
+    spacing,
+    poleDiameter,
+    poleShape,
+    minHeight,
+    maxHeight,
+    baseHeight,
+    heightFunction,
+    waveFrequency
+  } = params;
 
   const n = poleCount(params);
   const pw = plateSize(params);
@@ -40,6 +62,7 @@ function buildSingleGeometry(params: Params): THREE.BufferGeometry {
   // Base plate
   const baseGeo = new THREE.BoxGeometry(pw, baseHeight, pw);
   baseGeo.translate(0, baseHeight / 2, 0);
+  stripToPositionNormal(baseGeo);
   geometries.push(baseGeo);
 
   // Poles
@@ -58,12 +81,15 @@ function buildSingleGeometry(params: Params): THREE.BufferGeometry {
         poleGeo = new THREE.CylinderGeometry(radius, radius, h, 8, 1);
       }
       poleGeo.translate(x, y, z);
+      stripToPositionNormal(poleGeo);
       geometries.push(poleGeo);
     }
   }
 
   const merged = mergeGeometries(geometries, false);
   geometries.forEach((g) => g.dispose());
+
+  if (!merged) throw new Error('Failed to merge geometries for STL export.');
   return merged;
 }
 
@@ -99,6 +125,8 @@ function buildSectionedGeometry(params: Params): THREE.BufferGeometry {
 
   const merged = mergeGeometries(allGeometries, false);
   allGeometries.forEach((g) => g.dispose());
+
+  if (!merged) throw new Error('Failed to merge section geometries for STL export.');
   return merged;
 }
 
@@ -131,6 +159,7 @@ function buildOneSectionGeometry(section: Section, params: Params): THREE.Buffer
   // Base plate: sits from Y=0 to Y=baseHeight, X=[0,plateW], Z=[0,plateD]
   const baseGeo = new THREE.BoxGeometry(plateW, baseHeight, plateD);
   baseGeo.translate(plateW / 2, baseHeight / 2, plateD / 2);
+  stripToPositionNormal(baseGeo);
   geometries.push(baseGeo);
 
   // Poles
@@ -150,6 +179,7 @@ function buildOneSectionGeometry(section: Section, params: Params): THREE.Buffer
         poleGeo = new THREE.CylinderGeometry(radius, radius, h, 8, 1);
       }
       poleGeo.translate(localX, localY, localZ);
+      stripToPositionNormal(poleGeo);
       geometries.push(poleGeo);
     }
   }
@@ -161,6 +191,14 @@ function buildOneSectionGeometry(section: Section, params: Params): THREE.Buffer
 
   const merged = mergeGeometries(geometries, false);
   geometries.forEach((g) => g.dispose());
+
+  if (!merged) {
+    // Fallback: return just the base plate if merge fails (should not happen after stripping)
+    console.error('[geometry] Section merge failed, returning base plate only.');
+    const fallback = new THREE.BoxGeometry(plateW, baseHeight, plateD);
+    fallback.translate(plateW / 2, baseHeight / 2, plateD / 2);
+    return fallback;
+  }
   return merged;
 }
 
@@ -201,6 +239,9 @@ function createLabelGeometry(
 
     // Centre on base plate, sitting on top of it
     textGeo.translate(plateW / 2 - textW / 2, baseHeight, plateD / 2 - textD / 2);
+
+    // Strip extra UV attributes so this can be merged with box/cylinder geometries
+    stripToPositionNormal(textGeo);
 
     return textGeo;
   } catch (err) {
