@@ -1,7 +1,10 @@
 <script lang="ts">
-  import type { Params } from '$lib/schema';
+  import { poleCount, plateSize, type Params } from '$lib/schema';
+  import { numSectionsPerSide, sectionPhysicalSize } from '$lib/sectioning';
 
   let { params }: { params: Params } = $props();
+
+  const n = $derived(poleCount(params));
 
   // Guards: keep minHeight ≤ maxHeight
   function clampMin() {
@@ -10,6 +13,12 @@
   function clampMax() {
     if (params.maxHeight < params.minHeight) params.minHeight = params.maxHeight;
   }
+
+  // Split preview calculations
+  const ns = $derived(numSectionsPerSide(params));
+  const sectionSize = $derived(sectionPhysicalSize(params));
+  const totalSections = $derived(ns * ns);
+  const fullPlateSize = $derived(plateSize(params));
 </script>
 
 <div class="param-panel">
@@ -26,17 +35,17 @@
       <div class="control-group">
         <div class="control-label-row">
           <label class="control-label" for="gridSize">Grid Size</label>
-          <span class="control-value">{params.gridSize} × {params.gridSize}</span>
+          <span class="control-value">{params.gridSize} mm</span>
         </div>
         <input
           id="gridSize"
           type="range"
-          min="1"
-          max="50"
-          step="1"
+          min="10"
+          max="2000"
+          step="10"
           bind:value={params.gridSize}
         />
-        <p class="control-hint">Total poles: {params.gridSize * params.gridSize}</p>
+        <p class="control-hint">Total poles: {n} × {n} = {n * n}</p>
       </div>
 
       <div class="control-group">
@@ -48,7 +57,7 @@
           id="spacing"
           type="range"
           min="1"
-          max="50"
+          max="200"
           step="0.5"
           bind:value={params.spacing}
         />
@@ -181,6 +190,103 @@
         </div>
       {/if}
     </section>
+
+    <!-- ── PRINT SPLITTING ── -->
+    <section class="param-section">
+      <h2 class="section-heading">Print Splitting</h2>
+
+      <div class="control-group">
+        <label class="toggle-row">
+          <input type="checkbox" class="toggle-checkbox" bind:checked={params.splitEnabled} />
+          <span class="toggle-label">Split model for printing</span>
+        </label>
+        <p class="control-hint">
+          Divides the model into printable sections with numbered labels for easy reassembly.
+        </p>
+      </div>
+
+      {#if params.splitEnabled}
+        <div class="control-group">
+          <label class="control-label">Split Mode</label>
+          <div class="radio-group">
+            <label class="radio-option">
+              <input
+                type="radio"
+                name="splitMode"
+                value="grid"
+                bind:group={params.splitMode}
+              />
+              <span>Grid (manual sections)</span>
+            </label>
+            <label class="radio-option">
+              <input
+                type="radio"
+                name="splitMode"
+                value="printer"
+                bind:group={params.splitMode}
+              />
+              <span>Printer bed size</span>
+            </label>
+          </div>
+        </div>
+
+        {#if params.splitMode === 'grid'}
+          <div class="control-group">
+            <div class="control-label-row">
+              <label class="control-label" for="splitGridCount">Sections Per Side</label>
+              <span class="control-value">{params.splitGridCount}</span>
+            </div>
+            <input
+              id="splitGridCount"
+              type="range"
+              min="1"
+              max="10"
+              step="1"
+              bind:value={params.splitGridCount}
+            />
+            <p class="control-hint">
+              Result: {ns} × {ns} = {totalSections} sections · ~{sectionSize.toFixed(0)} mm each
+            </p>
+          </div>
+        {:else}
+          <div class="control-group">
+            <div class="control-label-row">
+              <label class="control-label" for="printerSize">Printer Bed Size</label>
+              <span class="control-value">{params.printerSize} mm</span>
+            </div>
+            <input
+              id="printerSize"
+              type="range"
+              min="50"
+              max="1000"
+              step="10"
+              bind:value={params.printerSize}
+            />
+            <p class="control-hint">
+              Model is {fullPlateSize.toFixed(0)} mm → {ns} × {ns} = {totalSections} sections
+            </p>
+          </div>
+        {/if}
+
+        <div class="control-group">
+          <div class="control-label-row">
+            <label class="control-label" for="labelFontSize">Label Size</label>
+            <span class="control-value">{params.labelFontSize} mm</span>
+          </div>
+          <input
+            id="labelFontSize"
+            type="range"
+            min="3"
+            max="40"
+            step="1"
+            bind:value={params.labelFontSize}
+          />
+          <p class="control-hint">
+            Sections are labelled 1.1, 1.2, 2.1 … embossed on the base for reassembly.
+          </p>
+        </div>
+      {/if}
+    </section>
   </div>
 </div>
 
@@ -188,7 +294,6 @@
   .param-panel {
     display: flex;
     flex-direction: column;
-    height: 100%;
     background: #0f172a;
     color: #e2e8f0;
   }
@@ -214,8 +319,6 @@
   }
 
   .param-sections {
-    flex: 1;
-    overflow-y: auto;
     padding: 8px 0;
   }
 
@@ -292,5 +395,50 @@
 
   .param-select:focus {
     border-color: #3b82f6;
+  }
+
+  /* Toggle */
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    margin-bottom: 6px;
+  }
+
+  .toggle-checkbox {
+    width: 16px;
+    height: 16px;
+    accent-color: #3b82f6;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .toggle-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #e2e8f0;
+  }
+
+  /* Radio group */
+  .radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 2px;
+  }
+
+  .radio-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    color: #94a3b8;
+  }
+
+  .radio-option input[type='radio'] {
+    accent-color: #3b82f6;
+    cursor: pointer;
   }
 </style>
