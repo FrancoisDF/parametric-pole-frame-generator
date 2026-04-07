@@ -2,7 +2,42 @@
   import ParameterPanel from '$lib/components/ParameterPanel.svelte';
   import ExportButton from '$lib/components/ExportButton.svelte';
   import Scene from '$lib/components/Scene.svelte';
-  import { params } from '$lib/params.svelte';
+  import { params, STORAGE_KEY } from '$lib/params.svelte';
+
+  let saveTimeout: ReturnType<typeof setTimeout>;
+
+  /**
+   * Save params to localStorage whenever they change.
+   * Debounced to avoid excessive writes.
+   */
+  $effect(() => {
+    // Touch all properties to establish dependencies
+    void (
+      params.gridSize +
+      params.spacing +
+      params.poleDiameter +
+      params.minHeight +
+      params.maxHeight +
+      params.poleShape.length +
+      params.baseHeight +
+      params.baseMargin +
+      params.heightFunction.length +
+      params.waveFrequency
+    );
+
+    // Debounce saves to avoid excessive writes
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(() => {
+      if (typeof window !== 'undefined') {
+        try {
+          const snapshot = { ...params };
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+        } catch (error) {
+          console.warn('Failed to save params to localStorage:', error);
+        }
+      }
+    }, 300);
+  });
 </script>
 
 <div class="app-layout">
