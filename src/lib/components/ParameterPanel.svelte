@@ -136,9 +136,9 @@
         <input
           id="baseHeight"
           type="range"
-          min="0.5"
-          max="20"
-          step="0.5"
+          min="0.1"
+          max="1"
+          step="0.1"
           bind:value={params.baseHeight}
         />
       </div>
