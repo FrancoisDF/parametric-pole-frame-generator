@@ -48,6 +48,9 @@ declare module '$env/static/private' {
 	export const __MISE_SESSION: string;
 	export const HOSTNAME: string;
 	export const YARN_VERSION: string;
+	export const GIT_CEILING_DIRECTORIES: string;
+	export const DEBUG: string;
+	export const GH_TOKEN: string;
 	export const npm_node_execpath: string;
 	export const XDG_CACHE_HOME: string;
 	export const SHLVL: string;
@@ -216,6 +219,9 @@ declare module '$env/dynamic/private' {
 		__MISE_SESSION: string;
 		HOSTNAME: string;
 		YARN_VERSION: string;
+		GIT_CEILING_DIRECTORIES: string;
+		DEBUG: string;
+		GH_TOKEN: string;
 		npm_node_execpath: string;
 		XDG_CACHE_HOME: string;
 		SHLVL: string;

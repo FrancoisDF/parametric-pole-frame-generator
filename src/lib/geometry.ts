@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { plateSize, type Params } from './schema.js';
+import { plateSize, poleCount, type Params } from './schema.js';
 import { poleHeight } from './heightFunctions.js';
 
 /**
@@ -14,7 +14,6 @@ import { poleHeight } from './heightFunctions.js';
  */
 export function buildExportGeometry(params: Params): THREE.BufferGeometry {
   const {
-    gridSize,
     spacing,
     poleDiameter,
     poleShape,
@@ -25,6 +24,7 @@ export function buildExportGeometry(params: Params): THREE.BufferGeometry {
     waveFrequency
   } = params;
 
+  const n = poleCount(params);
   const pw = plateSize(params);
   const geometries: THREE.BufferGeometry[] = [];
 
@@ -36,12 +36,12 @@ export function buildExportGeometry(params: Params): THREE.BufferGeometry {
   // ── Poles ──────────────────────────────────────────────────────────────────
   const radius = poleDiameter / 2;
 
-  for (let j = 0; j < gridSize; j++) {
-    for (let i = 0; i < gridSize; i++) {
-      const h = poleHeight(i, j, gridSize, heightFunction, waveFrequency, minHeight, maxHeight);
+  for (let j = 0; j < n; j++) {
+    for (let i = 0; i < n; i++) {
+      const h = poleHeight(i, j, n, heightFunction, waveFrequency, minHeight, maxHeight);
 
-      const x = (i - (gridSize - 1) / 2) * spacing;
-      const z = (j - (gridSize - 1) / 2) * spacing;
+      const x = (i - (n - 1) / 2) * spacing;
+      const z = (j - (n - 1) / 2) * spacing;
       const y = baseHeight + h / 2; // centre of the cylinder
 
       let poleGeo: THREE.CylinderGeometry;

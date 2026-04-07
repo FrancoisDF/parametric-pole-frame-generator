@@ -2,6 +2,7 @@
   import { useThrelte } from '@threlte/core';
   import * as THREE from 'three';
   import { poleHeight } from '$lib/heightFunctions';
+  import { poleCount } from '$lib/schema';
   import type { Params } from '$lib/schema';
   import { onDestroy } from 'svelte';
 
@@ -35,7 +36,6 @@
 
   function buildInstances() {
     const {
-      gridSize,
       spacing,
       poleDiameter,
       poleShape,
@@ -48,7 +48,8 @@
 
     disposeCurrent();
 
-    const count = gridSize * gridSize;
+    const n = poleCount(params);
+    const count = n * n;
     const radius = poleDiameter / 2;
 
     // Unit-height cylinder (height=1 centered at origin); we scale Y per instance
@@ -64,12 +65,12 @@
 
     let idx = 0;
 
-    for (let j = 0; j < gridSize; j++) {
-      for (let i = 0; i < gridSize; i++) {
-        const h = poleHeight(i, j, gridSize, heightFunction, waveFrequency, minHeight, maxHeight);
+    for (let j = 0; j < n; j++) {
+      for (let i = 0; i < n; i++) {
+        const h = poleHeight(i, j, n, heightFunction, waveFrequency, minHeight, maxHeight);
 
-        const x = (i - (gridSize - 1) / 2) * spacing;
-        const z = (j - (gridSize - 1) / 2) * spacing;
+        const x = (i - (n - 1) / 2) * spacing;
+        const z = (j - (n - 1) / 2) * spacing;
         const y = baseHeight + h / 2; // centre of the scaled cylinder
 
         dummy.position.set(x, y, z);
@@ -88,7 +89,7 @@
   $effect(() => {
     // Access every tracked param to establish reactive dependencies
     const _ = [
-      params.gridSize,
+      params.gridSize, // physical size → affects poleCount
       params.spacing,
       params.poleDiameter,
       params.poleShape,

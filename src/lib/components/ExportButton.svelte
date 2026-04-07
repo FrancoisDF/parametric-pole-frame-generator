@@ -1,5 +1,6 @@
 <script lang="ts">
   import { exportSTL } from '$lib/stl';
+  import { poleCount } from '$lib/schema';
   import type { Params } from '$lib/schema';
 
   let { params }: { params: Params } = $props();
@@ -23,7 +24,8 @@
     }
   }
 
-  const poleCount = $derived(params.gridSize * params.gridSize);
+  const n = $derived(poleCount(params));
+  const totalPoles = $derived(n * n);
 </script>
 
 <div class="export-area">
@@ -55,7 +57,7 @@
   </button>
 
   <p class="export-meta">
-    {poleCount} poles · binary STL · mm
+    {totalPoles} poles · binary STL · mm
   </p>
 </div>
 

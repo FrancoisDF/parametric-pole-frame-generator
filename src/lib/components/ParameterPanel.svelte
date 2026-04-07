@@ -1,7 +1,9 @@
 <script lang="ts">
-  import type { Params } from '$lib/schema';
+  import { poleCount, type Params } from '$lib/schema';
 
   let { params }: { params: Params } = $props();
+
+  const n = $derived(poleCount(params));
 
   // Guards: keep minHeight ≤ maxHeight
   function clampMin() {
@@ -26,17 +28,17 @@
       <div class="control-group">
         <div class="control-label-row">
           <label class="control-label" for="gridSize">Grid Size</label>
-          <span class="control-value">{params.gridSize} × {params.gridSize}</span>
+          <span class="control-value">{params.gridSize} mm</span>
         </div>
         <input
           id="gridSize"
           type="range"
-          min="1"
-          max="50"
-          step="1"
+          min="10"
+          max="2000"
+          step="10"
           bind:value={params.gridSize}
         />
-        <p class="control-hint">Total poles: {params.gridSize * params.gridSize}</p>
+        <p class="control-hint">Total poles: {n} × {n} = {n * n}</p>
       </div>
 
       <div class="control-group">
@@ -48,7 +50,7 @@
           id="spacing"
           type="range"
           min="1"
-          max="50"
+          max="200"
           step="0.5"
           bind:value={params.spacing}
         />

@@ -12,7 +12,7 @@
   // without the camera jumping back when params change.
   const initialDistance = Math.max(
     80,
-    (params.gridSize - 1) * params.spacing * 1.6 + params.maxHeight
+    params.gridSize * 1.6 + params.maxHeight
   );
 </script>
 
