@@ -190,7 +190,6 @@
   .param-panel {
     display: flex;
     flex-direction: column;
-    height: 100%;
     background: #0f172a;
     color: #e2e8f0;
   }
@@ -216,8 +215,6 @@
   }
 
   .param-sections {
-    flex: 1;
-    overflow-y: auto;
     padding: 8px 0;
   }
 

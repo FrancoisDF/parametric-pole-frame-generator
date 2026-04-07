@@ -8,8 +8,12 @@
 <div class="app-layout">
   <!-- Left sidebar: all parameter controls + export -->
   <aside class="app-sidebar">
-    <ParameterPanel {params} />
-    <ExportButton {params} />
+    <div class="sidebar-content">
+      <ParameterPanel {params} />
+    </div>
+    <div class="sidebar-footer">
+      <ExportButton {params} />
+    </div>
   </aside>
 
   <!-- Right: 3D viewport -->
@@ -31,8 +35,19 @@
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    height: 100%;
     border-right: 1px solid #1e293b;
+  }
+
+  .sidebar-content {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  .sidebar-footer {
+    flex-shrink: 0;
+    border-top: 1px solid #1e293b;
   }
 
   .app-viewport {
