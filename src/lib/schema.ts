@@ -17,7 +17,14 @@ export const paramsSchema = z.object({
 
   // Height function
   heightFunction: z.enum(['wave', 'hill', 'pyramid', 'flat']).default('wave'),
-  waveFrequency: z.number().min(0.1).max(10).default(1)
+  waveFrequency: z.number().min(0.1).max(10).default(1),
+
+  // Print splitting
+  splitEnabled: z.boolean().default(false),
+  splitMode: z.enum(['grid', 'printer']).default('grid'),
+  splitGridCount: z.number().min(1).max(10).default(2),
+  printerSize: z.number().min(50).max(1000).default(200),
+  labelFontSize: z.number().min(3).max(40).default(10)
 });
 
 export type Params = z.infer<typeof paramsSchema>;

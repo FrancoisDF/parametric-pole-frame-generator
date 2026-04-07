@@ -1,6 +1,7 @@
 <script lang="ts">
   import { exportSTL } from '$lib/stl';
   import { poleCount } from '$lib/schema';
+  import { numSectionsPerSide } from '$lib/sectioning';
   import type { Params } from '$lib/schema';
 
   let { params }: { params: Params } = $props();
@@ -26,6 +27,8 @@
 
   const n = $derived(poleCount(params));
   const totalPoles = $derived(n * n);
+  const ns = $derived(numSectionsPerSide(params));
+  const totalSections = $derived(ns * ns);
 </script>
 
 <div class="export-area">
@@ -57,7 +60,11 @@
   </button>
 
   <p class="export-meta">
-    {totalPoles} poles · binary STL · mm
+    {#if params.splitEnabled && totalSections > 1}
+      {totalSections} sections · {totalPoles} poles · binary STL · mm
+    {:else}
+      {totalPoles} poles · binary STL · mm
+    {/if}
   </p>
 </div>
 

@@ -7,33 +7,21 @@
   let saveTimeout: ReturnType<typeof setTimeout>;
 
   /**
-   * Save params to localStorage whenever they change.
-   * Debounced to avoid excessive writes.
+   * Save all params to localStorage whenever any property changes.
+   * JSON.stringify touches every property, so Svelte 5 will track
+   * all of them automatically — no need to list them manually.
    */
   $effect(() => {
-    // Touch all properties to establish dependencies
-    void (
-      params.gridSize +
-      params.spacing +
-      params.poleDiameter +
-      params.minHeight +
-      params.maxHeight +
-      params.poleShape.length +
-      params.baseHeight +
-      params.baseMargin +
-      params.heightFunction.length +
-      params.waveFrequency
-    );
+    // Serialize to trigger reactivity on every param property
+    const snapshot = JSON.parse(JSON.stringify(params));
 
-    // Debounce saves to avoid excessive writes
     clearTimeout(saveTimeout);
     saveTimeout = setTimeout(() => {
       if (typeof window !== 'undefined') {
         try {
-          const snapshot = { ...params };
           localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
-        } catch (error) {
-          console.warn('Failed to save params to localStorage:', error);
+        } catch (err) {
+          console.warn('Failed to save params to localStorage:', err);
         }
       }
     }, 300);
@@ -43,7 +31,7 @@
 <div class="app-layout">
   <!-- Left sidebar: all parameter controls + export -->
   <aside class="app-sidebar">
-    <div class="sidebar-content">
+    <div class="sidebar-scroll">
       <ParameterPanel {params} />
     </div>
     <div class="sidebar-footer">
@@ -72,17 +60,23 @@
     flex-direction: column;
     height: 100%;
     border-right: 1px solid #1e293b;
+    /* Prevent the sidebar from overflowing the viewport */
+    min-height: 0;
   }
 
-  .sidebar-content {
-    flex: 1;
+  /* Scrollable content area — grows to fill remaining space */
+  .sidebar-scroll {
+    flex: 1 1 0;
     min-height: 0;
     overflow-y: auto;
+    overflow-x: hidden;
   }
 
+  /* Always-visible footer that hosts the Export button */
   .sidebar-footer {
     flex-shrink: 0;
     border-top: 1px solid #1e293b;
+    background: #0f172a;
   }
 
   .app-viewport {
