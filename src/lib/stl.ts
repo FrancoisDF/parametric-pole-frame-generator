@@ -52,7 +52,9 @@ export async function exportSplitAsZip(params: Params): Promise<void> {
       // Export as binary STL
       const mesh = new THREE.Mesh(geometry);
       const stlBuffer = exporter.parse(mesh, { binary: true }) as unknown as ArrayBuffer;
-      zip.file(`${filePrefix}.stl`, stlBuffer);
+      // Convert ArrayBuffer to Uint8Array for jszip compatibility
+      const stlData = new Uint8Array(stlBuffer);
+      zip.file(`${filePrefix}.stl`, stlData);
 
       // Generate SVG plan
       const svgContent = generateSVGPlan(section, params);
