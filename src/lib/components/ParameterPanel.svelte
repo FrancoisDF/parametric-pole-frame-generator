@@ -164,13 +164,22 @@
           <option value="hill">Hill (Gaussian)</option>
           <option value="pyramid">Pyramid (diamond)</option>
           <option value="flat">Flat (uniform)</option>
+          <option value="ripple">Ripple (radial waves)</option>
+          <option value="saddle">Saddle (hyperbolic)</option>
+          <option value="checkerboard">Checkerboard</option>
+          <option value="spiral">Spiral</option>
         </select>
       </div>
 
-      {#if params.heightFunction === 'wave'}
+      {#if ['wave', 'ripple', 'checkerboard', 'spiral'].includes(params.heightFunction)}
+        {@const freqLabel =
+          params.heightFunction === 'wave' ? 'Wave Frequency' :
+          params.heightFunction === 'ripple' ? 'Ring Frequency' :
+          params.heightFunction === 'checkerboard' ? 'Cell Size' :
+          'Spiral Turns'}
         <div class="control-group">
           <div class="control-label-row">
-            <label class="control-label" for="waveFrequency">Wave Frequency</label>
+            <label class="control-label" for="waveFrequency">{freqLabel}</label>
             <span class="control-value">{params.waveFrequency.toFixed(1)}</span>
           </div>
           <input
