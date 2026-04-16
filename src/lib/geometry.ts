@@ -273,7 +273,7 @@ function createLabelGeometry(
     const textGeo = new TextGeometry(text, {
       font: _font,
       size,
-      depth: 1.5, // emboss thickness in mm
+      depth: 0.4, // emboss thickness in mm
       curveSegments: 4,
       bevelEnabled: false
     });
