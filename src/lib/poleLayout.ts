@@ -39,7 +39,7 @@ function randomLayout(params: Params): PolePosition[] {
   const target = n * n;
   const { spacing, gridSize, layoutSeed } = params;
   const half = gridSize / 2;
-  const minDist = spacing * 0.5;
+  const minDist = Math.max(1, spacing - 3);
   const minDist2 = minDist * minDist;
   const rand = makeLCG(layoutSeed);
   const positions: PolePosition[] = [];
