@@ -31,7 +31,7 @@ export function generateSVGPlan(section: Section, params: Params): string {
   // SVG dimensions with 10mm padding for label space
   const padding = 10;
   const svgW = plateW + 2 * padding;
-  const svgH = plateD + 2 * padding + 20; // Extra space for label
+  const svgH = plateD + 2 * padding;
 
   // Build SVG content
   const lines: string[] = [];
@@ -40,19 +40,8 @@ export function generateSVGPlan(section: Section, params: Params): string {
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${svgW} ${svgH}" width="${svgW}mm" height="${svgH}mm">`
   );
 
-  // Title/label at top
-  const label = `Section ${section.rowIdx + 1}.${section.colIdx + 1}`;
-  lines.push(`  <text x="${svgW / 2}" y="${padding - 2}" text-anchor="middle" font-size="8" font-weight="bold" fill="#000">${label}</text>`);
-
   // Group for the plan (offset by padding)
-  lines.push(`  <g transform="translate(${padding}, ${padding + 15})">`);
-
-  // Base plate outline with offset
-  lines.push(`    <!-- Base plate outline (offset by 0.1mm) -->`);
-  lines.push(
-    `    <rect x="${-baseOffsetMargin}" y="${-baseOffsetMargin}" width="${plateW + 2 * baseOffsetMargin}" height="${plateD + 2 * baseOffsetMargin}" ` +
-      `fill="none" stroke="#999" stroke-width="0.5" stroke-dasharray="1,1"/>`
-  );
+  lines.push(`  <g transform="translate(${padding}, ${padding})">`);
 
   // Original base plate (reference)
   lines.push(`    <!-- Original base plate (reference) -->`);
@@ -74,11 +63,6 @@ export function generateSVGPlan(section: Section, params: Params): string {
         `    <circle cx="${localX}" cy="${localZ}" r="${offsetRadius}" fill="none" stroke="#0066cc" stroke-width="0.3" />`
       );
 
-      // Add pole label (grid position)
-      lines.push(
-        `    <text x="${localX}" y="${localZ + 1}" text-anchor="middle" font-size="2" fill="#0066cc">${i + 1},${j + 1}</text>`
-      );
-
       // Optional: add height indicator as circle color/opacity if height varies significantly
       const heightPercent = (h - minHeight) / (maxHeight - minHeight);
       if (heightFunction !== 'flat' && heightPercent > 0) {
@@ -89,16 +73,6 @@ export function generateSVGPlan(section: Section, params: Params): string {
       }
     }
   }
-
-  // Scale reference
-  lines.push(`    <!-- Scale reference: 1mm = 1 SVG unit -->`);
-  lines.push(`    <text x="0" y="${plateD + baseOffsetMargin + 8}" font-size="6" fill="#666">Scale: 1mm = 1 unit</text>`);
-
-  // Dimensions
-  lines.push(`    <!-- Dimensions -->`);
-  lines.push(
-    `    <text x="${plateW / 2}" y="${plateD + baseOffsetMargin + 8}" text-anchor="middle" font-size="6" fill="#666">${plateW.toFixed(1)}mm × ${plateD.toFixed(1)}mm</text>`
-  );
 
   lines.push(`  </g>`);
   lines.push(`</svg>`);
