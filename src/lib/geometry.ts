@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
 import fontJson from 'three/examples/fonts/helvetiker_regular.typeface.json';
@@ -18,29 +17,47 @@ const _fontLoader = new FontLoader();
 const _font = _fontLoader.parse(fontJson as any);
 
 /**
- * Prepares geometry for STL export and merging.
- * Converts indexed geometry to non-indexed, keeps only position and normal.
- * This ensures consistent geometry format for merging.
+ * Manually merges an array of BufferGeometries by concatenating their
+ * position and normal Float32Arrays directly.
+ * This avoids all Three.js mergeGeometries compatibility checks
+ * (indexed vs non-indexed, attribute set mismatches, groups, etc.).
  */
-function prepareGeometryForMerge(geo: THREE.BufferGeometry): THREE.BufferGeometry {
-  // Convert indexed geometry to non-indexed to avoid merge conflicts
-  if (geo.index !== null) {
-    geo = geo.toNonIndexed();
+function mergeGeos(geos: THREE.BufferGeometry[]): THREE.BufferGeometry {
+  // Expand each geometry to non-indexed, keeping only position + normal
+  const expanded = geos.map((geo) => {
+    const g = geo.index !== null ? geo.toNonIndexed() : geo;
+
+    // Ensure normals
+    if (!g.attributes.normal) g.computeVertexNormals();
+
+    return g;
+  });
+
+  // Count total vertices
+  let totalVerts = 0;
+  for (const g of expanded) {
+    if (g.attributes.position) totalVerts += g.attributes.position.count;
   }
 
-  // Remove extra attributes, keep only position and normal
-  for (const name of Object.keys(geo.attributes)) {
-    if (name !== 'position' && name !== 'normal') {
-      geo.deleteAttribute(name);
-    }
+  const positions = new Float32Array(totalVerts * 3);
+  const normals = new Float32Array(totalVerts * 3);
+  let offset = 0;
+
+  for (const g of expanded) {
+    const posAttr = g.attributes.position as THREE.BufferAttribute;
+    const normAttr = g.attributes.normal as THREE.BufferAttribute;
+    if (!posAttr) continue;
+
+    const count = posAttr.count;
+    positions.set(posAttr.array as Float32Array, offset * 3);
+    if (normAttr) normals.set(normAttr.array as Float32Array, offset * 3);
+    offset += count;
   }
 
-  // Ensure normals exist
-  if (!geo.attributes.normal) {
-    geo.computeVertexNormals();
-  }
-
-  return geo;
+  const merged = new THREE.BufferGeometry();
+  merged.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  merged.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+  return merged;
 }
 
 /**
@@ -78,9 +95,8 @@ function buildSingleGeometry(params: Params): THREE.BufferGeometry {
   const geometries: THREE.BufferGeometry[] = [];
 
   // Base plate
-  let baseGeo: THREE.BufferGeometry = new THREE.BoxGeometry(pw, baseHeight, pw);
+  const baseGeo = new THREE.BoxGeometry(pw, baseHeight, pw);
   baseGeo.translate(0, baseHeight / 2, 0);
-  baseGeo = prepareGeometryForMerge(baseGeo);
   geometries.push(baseGeo);
 
   // Poles
@@ -99,15 +115,12 @@ function buildSingleGeometry(params: Params): THREE.BufferGeometry {
         poleGeo = new THREE.CylinderGeometry(radius, radius, h, 8, 1);
       }
       poleGeo.translate(x, y, z);
-      const preparedPole = prepareGeometryForMerge(poleGeo);
-      geometries.push(preparedPole);
+      geometries.push(poleGeo);
     }
   }
 
-  const merged = mergeGeometries(geometries, false);
+  const merged = mergeGeos(geometries);
   geometries.forEach((g) => g.dispose());
-
-  if (!merged) throw new Error('Failed to merge geometries for STL export.');
   return merged;
 }
 
@@ -141,10 +154,8 @@ function buildSectionedGeometry(params: Params): THREE.BufferGeometry {
     allGeometries.push(sectionGeo);
   }
 
-  const merged = mergeGeometries(allGeometries, false);
+  const merged = mergeGeos(allGeometries);
   allGeometries.forEach((g) => g.dispose());
-
-  if (!merged) throw new Error('Failed to merge section geometries for STL export.');
   return merged;
 }
 
@@ -209,9 +220,8 @@ function buildOneSectionGeometry(section: Section, params: Params): THREE.Buffer
   const plateD = (section.jMax - section.jMin) * spacing + poleDiameter + 2 * baseMargin;
 
   // Base plate: sits from Y=0 to Y=baseHeight, X=[0,plateW], Z=[0,plateD]
-  let baseGeo: THREE.BufferGeometry = new THREE.BoxGeometry(plateW, baseHeight, plateD);
+  const baseGeo = new THREE.BoxGeometry(plateW, baseHeight, plateD);
   baseGeo.translate(plateW / 2, baseHeight / 2, plateD / 2);
-  baseGeo = prepareGeometryForMerge(baseGeo);
   geometries.push(baseGeo);
 
   // Poles
@@ -231,29 +241,17 @@ function buildOneSectionGeometry(section: Section, params: Params): THREE.Buffer
         poleGeo = new THREE.CylinderGeometry(radius, radius, h, 8, 1);
       }
       poleGeo.translate(localX, localY, localZ);
-      const preparedPole = prepareGeometryForMerge(poleGeo);
-      geometries.push(preparedPole);
+      geometries.push(poleGeo);
     }
   }
 
   // Embossed label on top of base plate
   const label = `${section.rowIdx + 1}.${section.colIdx + 1}`;
-  let labelGeo = createLabelGeometry(label, labelFontSize, plateW, plateD, baseHeight);
-  if (labelGeo) {
-    labelGeo = prepareGeometryForMerge(labelGeo);
-    geometries.push(labelGeo);
-  }
+  const labelGeo = createLabelGeometry(label, labelFontSize, plateW, plateD, baseHeight);
+  if (labelGeo) geometries.push(labelGeo);
 
-  const merged = mergeGeometries(geometries, false);
+  const merged = mergeGeos(geometries);
   geometries.forEach((g) => g.dispose());
-
-  if (!merged) {
-    // Fallback: return just the base plate if merge fails (should not happen after stripping)
-    console.error('[geometry] Section merge failed, returning base plate only.');
-    const fallback = new THREE.BoxGeometry(plateW, baseHeight, plateD);
-    fallback.translate(plateW / 2, baseHeight / 2, plateD / 2);
-    return fallback;
-  }
   return merged;
 }
 
