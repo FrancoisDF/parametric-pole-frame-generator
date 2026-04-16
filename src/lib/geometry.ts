@@ -4,7 +4,7 @@ import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
 import fontJson from 'three/examples/fonts/helvetiker_regular.typeface.json';
 import { plateSize, poleCount, type Params } from './schema.js';
 import { poleHeight } from './heightFunctions.js';
-import { calculateSections, type Section } from './sectioning.js';
+import { calculateSections, numSectionsPerSide, type Section } from './sectioning.js';
 
 export interface SectionGeometryData {
   section: Section;
