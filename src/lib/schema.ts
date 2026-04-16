@@ -16,7 +16,7 @@ export const paramsSchema = z.object({
   baseMargin: z.number().min(0).max(50).default(5),
 
   // Height function
-  heightFunction: z.enum(['wave', 'hill', 'pyramid', 'flat']).default('wave'),
+  heightFunction: z.enum(['wave', 'hill', 'pyramid', 'flat', 'ripple', 'saddle', 'checkerboard', 'spiral']).default('wave'),
   waveFrequency: z.number().min(0.1).max(10).default(1),
 
   // Print splitting

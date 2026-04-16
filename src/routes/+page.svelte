@@ -70,6 +70,7 @@
     min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
+    background: #0f172a;
   }
 
   /* Always-visible footer that hosts the Export button */

@@ -107,8 +107,8 @@ declare module '$env/static/private' {
 	export const npm_config_update_notifier: string;
 	export const npm_config_npm_globalconfig: string;
 	export const NX_REJECT_UNKNOWN_LOCAL_CACHE: string;
-	export const KUBERNETES_PORT_443_TCP: string;
 	export const KUBERNETES_SERVICE_PORT_HTTPS: string;
+	export const KUBERNETES_PORT_443_TCP: string;
 	export const __MISE_ZSH_PRECMD_RUN: string;
 	export const npm_config_globalconfig: string;
 	export const KUBERNETES_SERVICE_HOST: string;
@@ -276,8 +276,8 @@ declare module '$env/dynamic/private' {
 		npm_config_update_notifier: string;
 		npm_config_npm_globalconfig: string;
 		NX_REJECT_UNKNOWN_LOCAL_CACHE: string;
-		KUBERNETES_PORT_443_TCP: string;
 		KUBERNETES_SERVICE_PORT_HTTPS: string;
+		KUBERNETES_PORT_443_TCP: string;
 		__MISE_ZSH_PRECMD_RUN: string;
 		npm_config_globalconfig: string;
 		KUBERNETES_SERVICE_HOST: string;
