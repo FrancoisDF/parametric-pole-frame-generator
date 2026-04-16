@@ -78,7 +78,7 @@ function buildSingleGeometry(params: Params): THREE.BufferGeometry {
   const geometries: THREE.BufferGeometry[] = [];
 
   // Base plate
-  let baseGeo = new THREE.BoxGeometry(pw, baseHeight, pw);
+  let baseGeo: THREE.BufferGeometry = new THREE.BoxGeometry(pw, baseHeight, pw);
   baseGeo.translate(0, baseHeight / 2, 0);
   baseGeo = prepareGeometryForMerge(baseGeo);
   geometries.push(baseGeo);
@@ -92,7 +92,7 @@ function buildSingleGeometry(params: Params): THREE.BufferGeometry {
       const z = (j - (n - 1) / 2) * spacing;
       const y = baseHeight + h / 2;
 
-      let poleGeo: THREE.CylinderGeometry;
+      let poleGeo: THREE.BufferGeometry;
       if (poleShape === 'tapered') {
         poleGeo = new THREE.CylinderGeometry(radius * 0.3, radius, h, 8, 1);
       } else {
@@ -209,7 +209,7 @@ function buildOneSectionGeometry(section: Section, params: Params): THREE.Buffer
   const plateD = (section.jMax - section.jMin) * spacing + poleDiameter + 2 * baseMargin;
 
   // Base plate: sits from Y=0 to Y=baseHeight, X=[0,plateW], Z=[0,plateD]
-  let baseGeo = new THREE.BoxGeometry(plateW, baseHeight, plateD);
+  let baseGeo: THREE.BufferGeometry = new THREE.BoxGeometry(plateW, baseHeight, plateD);
   baseGeo.translate(plateW / 2, baseHeight / 2, plateD / 2);
   baseGeo = prepareGeometryForMerge(baseGeo);
   geometries.push(baseGeo);
@@ -224,7 +224,7 @@ function buildOneSectionGeometry(section: Section, params: Params): THREE.Buffer
       const localZ = (j - section.jMin) * spacing + radius + baseMargin;
       const localY = baseHeight + h / 2;
 
-      let poleGeo: THREE.CylinderGeometry;
+      let poleGeo: THREE.BufferGeometry;
       if (poleShape === 'tapered') {
         poleGeo = new THREE.CylinderGeometry(radius * 0.3, radius, h, 8, 1);
       } else {
