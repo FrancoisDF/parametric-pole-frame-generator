@@ -7,6 +7,11 @@ import { plateSize, poleCount, type Params } from './schema.js';
 import { poleHeight } from './heightFunctions.js';
 import { calculateSections, type Section } from './sectioning.js';
 
+export interface SectionGeometryData {
+  section: Section;
+  geometry: THREE.BufferGeometry;
+}
+
 // Parse the bundled helvetiker font once at module load
 const _fontLoader = new FontLoader();
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -128,6 +133,33 @@ function buildSectionedGeometry(params: Params): THREE.BufferGeometry {
 
   if (!merged) throw new Error('Failed to merge section geometries for STL export.');
   return merged;
+}
+
+/**
+ * Builds independent section geometries, one per section.
+ * Each geometry has its own base plate centered at origin (not in a grid).
+ * Used for split exports where each section is a standalone STL file.
+ */
+export function buildIndependentSectionGeometries(
+  params: Params
+): SectionGeometryData[] {
+  const sections = calculateSections(params);
+  const result: SectionGeometryData[] = [];
+
+  for (const section of sections) {
+    const geometry = buildOneSectionGeometry(section, params);
+
+    // Center the geometry so the base plate is centered at origin
+    geometry.computeBoundingBox();
+    const bb = geometry.boundingBox!;
+    const centerX = (bb.max.x + bb.min.x) / 2;
+    const centerZ = (bb.max.z + bb.min.z) / 2;
+    geometry.translate(-centerX, 0, -centerZ);
+
+    result.push({ section, geometry });
+  }
+
+  return result;
 }
 
 /**
