@@ -58,18 +58,20 @@ export async function exportSplitAsZip(params: Params): Promise<void> {
       }
 
       // Export as binary STL
+      // STLExporter.parse() with binary:true returns a DataView (not an ArrayBuffer).
+      // We must read .buffer/.byteOffset/.byteLength to get the real bytes.
       const mesh = new THREE.Mesh(geometry);
-      const stlBuffer = exporter.parse(mesh, { binary: true }) as unknown as ArrayBuffer;
+      const stlDataView = exporter.parse(mesh, { binary: true }) as unknown as DataView;
 
       // Verify buffer has data
-      if (!stlBuffer || stlBuffer.byteLength === 0) {
+      if (!stlDataView || stlDataView.byteLength === 0) {
         console.warn(`[stl] Section ${label} produced empty STL buffer`);
         geometry.dispose();
         continue;
       }
 
-      // Convert ArrayBuffer to Uint8Array for jszip compatibility
-      const stlData = new Uint8Array(stlBuffer);
+      // Extract the underlying ArrayBuffer slice as Uint8Array for jszip
+      const stlData = new Uint8Array(stlDataView.buffer, stlDataView.byteOffset, stlDataView.byteLength);
       zip.file(`${filePrefix}.stl`, stlData);
 
       // Generate SVG plan
