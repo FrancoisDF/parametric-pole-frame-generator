@@ -84,14 +84,6 @@
       </div>
 
       <div class="control-group">
-        <label class="control-label" for="poleShape">Shape</label>
-        <select id="poleShape" class="param-select" bind:value={params.poleShape}>
-          <option value="straight">Straight (cylinder)</option>
-          <option value="tapered">Tapered (cone)</option>
-        </select>
-      </div>
-
-      <div class="control-group">
         <div class="control-label-row">
           <label class="control-label" for="minHeight">Min Height</label>
           <span class="control-value">{params.minHeight} mm</span>

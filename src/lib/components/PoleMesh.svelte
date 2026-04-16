@@ -38,7 +38,6 @@
     const {
       spacing,
       poleDiameter,
-      poleShape,
       minHeight,
       maxHeight,
       baseHeight,
@@ -53,10 +52,7 @@
     const radius = poleDiameter / 2;
 
     // Unit-height cylinder (height=1 centered at origin); we scale Y per instance
-    activeGeo =
-      poleShape === 'tapered'
-        ? new THREE.CylinderGeometry(radius * 0.3, radius, 1, 8, 1)
-        : new THREE.CylinderGeometry(radius, radius, 1, 8, 1);
+    activeGeo = new THREE.CylinderGeometry(radius, radius, 1, 8, 1);
 
     activeMesh = new THREE.InstancedMesh(activeGeo, material, count);
     activeMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
@@ -92,7 +88,6 @@
       params.gridSize, // physical size → affects poleCount
       params.spacing,
       params.poleDiameter,
-      params.poleShape,
       params.minHeight,
       params.maxHeight,
       params.baseHeight,

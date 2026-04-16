@@ -82,7 +82,6 @@ function buildSingleGeometry(params: Params): THREE.BufferGeometry {
   const {
     spacing,
     poleDiameter,
-    poleShape,
     minHeight,
     maxHeight,
     baseHeight,
@@ -108,12 +107,7 @@ function buildSingleGeometry(params: Params): THREE.BufferGeometry {
       const z = (j - (n - 1) / 2) * spacing;
       const y = baseHeight + h / 2;
 
-      let poleGeo: THREE.BufferGeometry;
-      if (poleShape === 'tapered') {
-        poleGeo = new THREE.CylinderGeometry(radius * 0.3, radius, h, 8, 1);
-      } else {
-        poleGeo = new THREE.CylinderGeometry(radius, radius, h, 8, 1);
-      }
+      const poleGeo = new THREE.CylinderGeometry(radius, radius, h, 8, 1);
       poleGeo.translate(x, y, z);
       geometries.push(poleGeo);
     }
@@ -218,7 +212,6 @@ function buildOneSectionGeometry(section: Section, params: Params, ns: number): 
   const {
     spacing,
     poleDiameter,
-    poleShape,
     minHeight,
     maxHeight,
     baseHeight,
@@ -261,12 +254,7 @@ function buildOneSectionGeometry(section: Section, params: Params, ns: number): 
       const localZ = frontOffset + (j - section.jMin) * spacing;
       const localY = baseHeight + h / 2;
 
-      let poleGeo: THREE.BufferGeometry;
-      if (poleShape === 'tapered') {
-        poleGeo = new THREE.CylinderGeometry(radius * 0.3, radius, h, 8, 1);
-      } else {
-        poleGeo = new THREE.CylinderGeometry(radius, radius, h, 8, 1);
-      }
+      const poleGeo = new THREE.CylinderGeometry(radius, radius, h, 8, 1);
       poleGeo.translate(localX, localY, localZ);
       geometries.push(poleGeo);
     }
