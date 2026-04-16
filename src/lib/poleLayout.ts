@@ -72,14 +72,21 @@ function circularLayout(params: Params): PolePosition[] {
   // Center pole
   positions.push({ x: 0, z: 0 });
 
+  // Continue rings until the radius reaches the corner of the square (half * √2),
+  // but only keep poles that fall within the square bounds.
+  const corner = half * Math.SQRT2;
   let k = 1;
   while (true) {
     const r = k * spacing;
-    if (r > half) break;
+    if (r > corner) break;
     const count = Math.max(1, Math.round((2 * Math.PI * r) / spacing));
     for (let m = 0; m < count; m++) {
       const angle = (m / count) * 2 * Math.PI;
-      positions.push({ x: r * Math.cos(angle), z: r * Math.sin(angle) });
+      const x = r * Math.cos(angle);
+      const z = r * Math.sin(angle);
+      if (Math.abs(x) <= half && Math.abs(z) <= half) {
+        positions.push({ x, z });
+      }
     }
     k++;
   }
@@ -104,9 +111,12 @@ function spiralLayout(params: Params): PolePosition[] {
   let theta = dTheta;
   let arcSinceLastPole = 0;
 
+  // Continue until the spiral reaches the corner of the square (half * √2),
+  // but only keep poles that fall within the square bounds.
+  const corner = half * Math.SQRT2;
   while (true) {
     const r = a * theta;
-    if (r > half) break;
+    if (r > corner) break;
 
     // Arc-length element: ds = sqrt(r² + a²) · dθ
     const ds = Math.sqrt(r * r + a * a) * dTheta;
@@ -114,7 +124,11 @@ function spiralLayout(params: Params): PolePosition[] {
 
     if (arcSinceLastPole >= spacing) {
       arcSinceLastPole -= spacing;
-      positions.push({ x: r * Math.cos(theta), z: r * Math.sin(theta) });
+      const x = r * Math.cos(theta);
+      const z = r * Math.sin(theta);
+      if (Math.abs(x) <= half && Math.abs(z) <= half) {
+        positions.push({ x, z });
+      }
     }
 
     theta += dTheta;
