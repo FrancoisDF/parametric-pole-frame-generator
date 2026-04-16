@@ -42,7 +42,6 @@ declare module '$env/static/private' {
 	export const FUSION_ENVIRONMENT: string;
 	export const KUBERNETES_SERVICE_PORT: string;
 	export const KUBERNETES_PORT: string;
-	export const AI_AGENT: string;
 	export const npm_config_user_agent: string;
 	export const NODE_VERSION: string;
 	export const __MISE_SESSION: string;
@@ -73,11 +72,10 @@ declare module '$env/static/private' {
 	export const FORCE_COLOR: string;
 	export const LOGNAME: string;
 	export const pnpm_config_verify_deps_before_run: string;
-	export const _: string;
 	export const MISE_SHELL: string;
+	export const _: string;
 	export const GOMODCACHE: string;
 	export const npm_config_registry: string;
-	export const TERM: string;
 	export const KUBERNETES_PORT_443_TCP_ADDR: string;
 	export const npm_config_node_gyp: string;
 	export const PATH: string;
@@ -213,7 +211,6 @@ declare module '$env/dynamic/private' {
 		FUSION_ENVIRONMENT: string;
 		KUBERNETES_SERVICE_PORT: string;
 		KUBERNETES_PORT: string;
-		AI_AGENT: string;
 		npm_config_user_agent: string;
 		NODE_VERSION: string;
 		__MISE_SESSION: string;
@@ -244,11 +241,10 @@ declare module '$env/dynamic/private' {
 		FORCE_COLOR: string;
 		LOGNAME: string;
 		pnpm_config_verify_deps_before_run: string;
-		_: string;
 		MISE_SHELL: string;
+		_: string;
 		GOMODCACHE: string;
 		npm_config_registry: string;
-		TERM: string;
 		KUBERNETES_PORT_443_TCP_ADDR: string;
 		npm_config_node_gyp: string;
 		PATH: string;
