@@ -1,6 +1,6 @@
 import { poleCount, type Params } from './schema.js';
 import { poleHeight } from './heightFunctions.js';
-import type { Section } from './sectioning.js';
+import { numSectionsPerSide, type Section } from './sectioning.js';
 
 /**
  * Generates an SVG plan (2D top-view) of a section.
@@ -20,13 +20,22 @@ export function generateSVGPlan(section: Section, params: Params): string {
   } = params;
 
   const n = poleCount(params);
+  const ns = numSectionsPerSide(params);
   const radius = poleDiameter / 2;
   const offsetRadius = radius + 0.1; // 0.1mm offset for paper cutting
-  const baseOffsetMargin = baseMargin + 0.1; // 0.1mm offset on edges
+
+  // Mirror the same interior/exterior offset logic used in geometry.ts:
+  // exterior sides keep the full margin; interior (shared) sides use spacing/2.
+  const outerOffset = radius + baseMargin;
+  const innerOffset = spacing / 2;
+  const leftOffset  = section.colIdx === 0      ? outerOffset : innerOffset;
+  const rightOffset = section.colIdx === ns - 1  ? outerOffset : innerOffset;
+  const frontOffset = section.rowIdx === 0      ? outerOffset : innerOffset;
+  const backOffset  = section.rowIdx === ns - 1  ? outerOffset : innerOffset;
 
   // Section base plate dimensions
-  const plateW = (section.iMax - section.iMin) * spacing + poleDiameter + 2 * baseMargin;
-  const plateD = (section.jMax - section.jMin) * spacing + poleDiameter + 2 * baseMargin;
+  const plateW = leftOffset + (section.iMax - section.iMin) * spacing + rightOffset;
+  const plateD = frontOffset + (section.jMax - section.jMin) * spacing + backOffset;
 
   // SVG dimensions with 10mm padding for label space
   const padding = 10;
@@ -52,8 +61,8 @@ export function generateSVGPlan(section: Section, params: Params): string {
   for (let j = section.jMin; j <= section.jMax; j++) {
     for (let i = section.iMin; i <= section.iMax; i++) {
       // Local position relative to section
-      const localX = (i - section.iMin) * spacing + radius + baseMargin;
-      const localZ = (j - section.jMin) * spacing + radius + baseMargin;
+      const localX = leftOffset + (i - section.iMin) * spacing;
+      const localZ = frontOffset + (j - section.jMin) * spacing;
 
       // Get pole height for visualization (optional, shown as circle radius variation or label)
       const h = poleHeight(i, j, n, heightFunction, waveFrequency, minHeight, maxHeight);
