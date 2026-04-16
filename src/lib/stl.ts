@@ -49,9 +49,25 @@ export async function exportSplitAsZip(params: Params): Promise<void> {
       const label = `${section.rowIdx + 1}.${section.colIdx + 1}`;
       const filePrefix = `section_${section.rowIdx + 1}_${section.colIdx + 1}`;
 
+      // Verify geometry has data
+      const positionAttr = geometry.attributes.position;
+      if (!positionAttr || positionAttr.count === 0) {
+        console.warn(`[stl] Section ${label} has no geometry data, skipping`);
+        geometry.dispose();
+        continue;
+      }
+
       // Export as binary STL
       const mesh = new THREE.Mesh(geometry);
       const stlBuffer = exporter.parse(mesh, { binary: true }) as unknown as ArrayBuffer;
+
+      // Verify buffer has data
+      if (!stlBuffer || stlBuffer.byteLength === 0) {
+        console.warn(`[stl] Section ${label} produced empty STL buffer`);
+        geometry.dispose();
+        continue;
+      }
+
       // Convert ArrayBuffer to Uint8Array for jszip compatibility
       const stlData = new Uint8Array(stlBuffer);
       zip.file(`${filePrefix}.stl`, stlData);
