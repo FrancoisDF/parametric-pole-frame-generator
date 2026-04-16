@@ -1,8 +1,8 @@
 <script lang="ts">
   import { useThrelte } from '@threlte/core';
   import * as THREE from 'three';
-  import { poleHeight } from '$lib/heightFunctions';
-  import { poleCount } from '$lib/schema';
+  import { poleHeightFromWorld } from '$lib/heightFunctions';
+  import { generatePolePositions } from '$lib/poleLayout';
   import type { Params } from '$lib/schema';
   import { onDestroy } from 'svelte';
 
@@ -35,23 +35,17 @@
   }
 
   function buildInstances() {
-    const {
-      spacing,
-      poleDiameter,
-      minHeight,
-      maxHeight,
-      baseHeight,
-      heightFunction,
-      waveFrequency
-    } = params;
+    const { poleDiameter, minHeight, maxHeight, baseHeight, heightFunction, waveFrequency, gridSize } =
+      params;
 
     disposeCurrent();
 
-    const n = poleCount(params);
-    const count = n * n;
+    const positions = generatePolePositions(params);
+    const count = positions.length;
     const radius = poleDiameter / 2;
+    const half = gridSize / 2;
 
-    // Unit-height cylinder (height=1 centered at origin); we scale Y per instance
+    // Unit-height cylinder (height=1 centred at origin); we scale Y per instance
     activeGeo = new THREE.CylinderGeometry(radius, radius, 1, 8, 1);
 
     activeMesh = new THREE.InstancedMesh(activeGeo, material, count);
@@ -59,22 +53,15 @@
     activeMesh.castShadow = true;
     activeMesh.receiveShadow = true;
 
-    let idx = 0;
+    for (let idx = 0; idx < positions.length; idx++) {
+      const { x, z } = positions[idx];
+      const h = poleHeightFromWorld(x, z, half, heightFunction, waveFrequency, minHeight, maxHeight);
+      const y = baseHeight + h / 2; // centre of the scaled cylinder
 
-    for (let j = 0; j < n; j++) {
-      for (let i = 0; i < n; i++) {
-        const h = poleHeight(i, j, n, heightFunction, waveFrequency, minHeight, maxHeight);
-
-        const x = (i - (n - 1) / 2) * spacing;
-        const z = (j - (n - 1) / 2) * spacing;
-        const y = baseHeight + h / 2; // centre of the scaled cylinder
-
-        dummy.position.set(x, y, z);
-        dummy.scale.set(1, h, 1); // scale Y to actual height
-        dummy.updateMatrix();
-        activeMesh.setMatrixAt(idx, dummy.matrix);
-        idx++;
-      }
+      dummy.position.set(x, y, z);
+      dummy.scale.set(1, h, 1); // scale Y to actual height
+      dummy.updateMatrix();
+      activeMesh.setMatrixAt(idx, dummy.matrix);
     }
 
     activeMesh.instanceMatrix.needsUpdate = true;
@@ -85,14 +72,16 @@
   $effect(() => {
     // Access every tracked param to establish reactive dependencies
     const _ = [
-      params.gridSize, // physical size → affects poleCount
+      params.gridSize,
       params.spacing,
       params.poleDiameter,
       params.minHeight,
       params.maxHeight,
       params.baseHeight,
       params.heightFunction,
-      params.waveFrequency
+      params.waveFrequency,
+      params.poleLayout,
+      params.layoutSeed
     ];
     void _;
 

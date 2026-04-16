@@ -62,6 +62,25 @@ export function mapToHeight(t: number, minHeight: number, maxHeight: number): nu
 }
 
 /**
+ * Computes the actual pole height in mm for a world-space position (x, z).
+ * Normalises to [-1, 1] using halfGridSize, clamps, then delegates to getHeightT.
+ */
+export function poleHeightFromWorld(
+  x: number,
+  z: number,
+  halfGridSize: number,
+  heightFunction: string,
+  waveFrequency: number,
+  minHeight: number,
+  maxHeight: number
+): number {
+  const nx = halfGridSize > 0 ? Math.max(-1, Math.min(1, x / halfGridSize)) : 0;
+  const ny = halfGridSize > 0 ? Math.max(-1, Math.min(1, z / halfGridSize)) : 0;
+  const t = getHeightT(nx, ny, heightFunction, waveFrequency);
+  return Math.max(0.01, mapToHeight(t, minHeight, maxHeight));
+}
+
+/**
  * Convenience: computes the actual pole height in mm for grid position (i, j)
  * given the full params object.
  */

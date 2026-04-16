@@ -1,10 +1,12 @@
 <script lang="ts">
   import { poleCount, plateSize, type Params } from '$lib/schema';
   import { numSectionsPerSide, sectionPhysicalSize } from '$lib/sectioning';
+  import { generatePolePositions } from '$lib/poleLayout';
 
   let { params }: { params: Params } = $props();
 
   const n = $derived(poleCount(params));
+  const actualPoleCount = $derived(generatePolePositions(params).length);
 
   // Guards: keep minHeight ≤ maxHeight
   function clampMin() {
@@ -45,7 +47,6 @@
           step="10"
           bind:value={params.gridSize}
         />
-        <p class="control-hint">Total poles: {n} × {n} = {n * n}</p>
       </div>
 
       <div class="control-group">
@@ -62,6 +63,42 @@
           bind:value={params.spacing}
         />
       </div>
+
+      <div class="control-group">
+        <label class="control-label" for="poleLayout">Pole Layout</label>
+        <select id="poleLayout" class="param-select" bind:value={params.poleLayout}>
+          <option value="grid">Grid (regular)</option>
+          <option value="random">Random</option>
+          <option value="circular">Circular</option>
+          <option value="spiral">Spiral</option>
+        </select>
+      </div>
+
+      {#if params.poleLayout === 'random'}
+        <div class="control-group">
+          <div class="control-label-row">
+            <label class="control-label" for="layoutSeed">Random Seed</label>
+            <span class="control-value">{params.layoutSeed}</span>
+          </div>
+          <input
+            id="layoutSeed"
+            type="range"
+            min="0"
+            max="9999"
+            step="1"
+            bind:value={params.layoutSeed}
+          />
+          <p class="control-hint">Change seed to get a different random arrangement.</p>
+        </div>
+      {/if}
+
+      <p class="control-hint">
+        {#if params.poleLayout === 'grid'}
+          Total poles: {n} × {n} = {n * n}
+        {:else}
+          Poles: {actualPoleCount} (~{n * n} for grid equivalent)
+        {/if}
+      </p>
     </section>
 
     <!-- ── POLES ── -->

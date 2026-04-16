@@ -4,6 +4,8 @@ export const paramsSchema = z.object({
   // Grid — gridSize is the physical side length of the pole grid in mm
   gridSize: z.number().min(10).max(2000).default(490),
   spacing: z.number().min(1).max(200).default(10),
+  poleLayout: z.enum(['grid', 'random', 'circular', 'spiral']).default('grid'),
+  layoutSeed: z.number().min(0).max(9999).default(42),
 
   // Pole dimensions
   poleDiameter: z.number().min(0.5).max(20).default(3),

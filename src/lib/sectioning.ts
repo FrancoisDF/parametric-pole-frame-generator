@@ -3,10 +3,10 @@ import { poleCount, plateSize, type Params } from './schema.js';
 export interface Section {
   rowIdx: number; // 0-based row index (label row = rowIdx + 1)
   colIdx: number; // 0-based col index (label col = colIdx + 1)
-  iMin: number; // pole x-index start (inclusive)
-  iMax: number; // pole x-index end (inclusive)
-  jMin: number; // pole z-index start (inclusive)
-  jMax: number; // pole z-index end (inclusive)
+  xMin: number;   // world-space x lower bound for pole filtering (inclusive)
+  xMax: number;   // world-space x upper bound (exclusive except for the last column)
+  zMin: number;   // world-space z lower bound (inclusive)
+  zMax: number;   // world-space z upper bound (exclusive except for the last row)
 }
 
 /**
@@ -24,25 +24,51 @@ export function numSectionsPerSide(params: Params): number {
 }
 
 /**
- * Calculates the array of sections for the current params.
+ * Computes ns-1 spatial split points along one axis, placed halfway between
+ * consecutive poles at the section seams (grid-equivalent spacing).
+ * This ensures seam plates join flush regardless of the pole layout mode.
+ */
+function computeSplitPoints(params: Params, ns: number): number[] {
+  const n = poleCount(params);
+  const { spacing } = params;
+  const polesPerSection = Math.ceil(n / ns);
+  const splits: number[] = [];
+
+  for (let k = 1; k < ns; k++) {
+    const iMax = Math.min(k * polesPerSection - 1, n - 1);
+    const worldCoord = (iMax - (n - 1) / 2) * spacing + spacing / 2;
+    splits.push(worldCoord);
+  }
+
+  return splits;
+}
+
+/**
+ * Calculates the array of spatial sections for the current params.
+ * Each section stores world-space bounds used for pole filtering and
+ * plate-edge computation in geometry building.
  */
 export function calculateSections(params: Params): Section[] {
-  const n = poleCount(params);
   const ns = numSectionsPerSide(params);
-  const polesPerSection = Math.ceil(n / ns);
+  const half = params.gridSize / 2;
+
+  // Build split-point arrays including the outer boundaries
+  const innerSplits = computeSplitPoints(params, ns);
+  const xSplits = [-half, ...innerSplits, half];
+  const zSplits = [-half, ...innerSplits, half];
+
   const sections: Section[] = [];
 
   for (let sRow = 0; sRow < ns; sRow++) {
     for (let sCol = 0; sCol < ns; sCol++) {
-      const iMin = sCol * polesPerSection;
-      const iMax = Math.min((sCol + 1) * polesPerSection - 1, n - 1);
-      const jMin = sRow * polesPerSection;
-      const jMax = Math.min((sRow + 1) * polesPerSection - 1, n - 1);
-
-      // Skip if pole range is empty (n < ns case)
-      if (iMin >= n || jMin >= n) continue;
-
-      sections.push({ rowIdx: sRow, colIdx: sCol, iMin, iMax, jMin, jMax });
+      sections.push({
+        rowIdx: sRow,
+        colIdx: sCol,
+        xMin: xSplits[sCol],
+        xMax: xSplits[sCol + 1],
+        zMin: zSplits[sRow],
+        zMax: zSplits[sRow + 1]
+      });
     }
   }
 

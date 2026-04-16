@@ -2,8 +2,9 @@ import * as THREE from 'three';
 import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
 import fontJson from 'three/examples/fonts/helvetiker_regular.typeface.json';
-import { plateSize, poleCount, type Params } from './schema.js';
-import { poleHeight } from './heightFunctions.js';
+import { plateSize, type Params } from './schema.js';
+import { poleHeightFromWorld } from './heightFunctions.js';
+import { generatePolePositions } from './poleLayout.js';
 import { calculateSections, numSectionsPerSide, type Section } from './sectioning.js';
 
 export interface SectionGeometryData {
@@ -76,41 +77,28 @@ export function buildExportGeometry(params: Params): THREE.BufferGeometry {
   return buildSingleGeometry(params);
 }
 
-// ─── Single-piece build (original behaviour) ──────────────────────────────────
+// ─── Single-piece build ───────────────────────────────────────────────────────
 
 function buildSingleGeometry(params: Params): THREE.BufferGeometry {
-  const {
-    spacing,
-    poleDiameter,
-    minHeight,
-    maxHeight,
-    baseHeight,
-    heightFunction,
-    waveFrequency
-  } = params;
+  const { poleDiameter, minHeight, maxHeight, baseHeight, heightFunction, waveFrequency, gridSize } =
+    params;
 
-  const n = poleCount(params);
   const pw = plateSize(params);
+  const half = gridSize / 2;
   const geometries: THREE.BufferGeometry[] = [];
 
-  // Base plate
+  // Base plate (centred at origin)
   const baseGeo = new THREE.BoxGeometry(pw, baseHeight, pw);
   baseGeo.translate(0, baseHeight / 2, 0);
   geometries.push(baseGeo);
 
-  // Poles
+  // Poles — iterate position list from the active layout
   const radius = poleDiameter / 2;
-  for (let j = 0; j < n; j++) {
-    for (let i = 0; i < n; i++) {
-      const h = poleHeight(i, j, n, heightFunction, waveFrequency, minHeight, maxHeight);
-      const x = (i - (n - 1) / 2) * spacing;
-      const z = (j - (n - 1) / 2) * spacing;
-      const y = baseHeight + h / 2;
-
-      const poleGeo = new THREE.CylinderGeometry(radius, radius, h, 8, 1);
-      poleGeo.translate(x, y, z);
-      geometries.push(poleGeo);
-    }
+  for (const { x, z } of generatePolePositions(params)) {
+    const h = poleHeightFromWorld(x, z, half, heightFunction, waveFrequency, minHeight, maxHeight);
+    const poleGeo = new THREE.CylinderGeometry(radius, radius, h, 8, 1);
+    poleGeo.translate(x, baseHeight + h / 2, z);
+    geometries.push(poleGeo);
   }
 
   const merged = mergeGeos(geometries);
@@ -121,26 +109,22 @@ function buildSingleGeometry(params: Params): THREE.BufferGeometry {
 // ─── Multi-section build ──────────────────────────────────────────────────────
 
 function buildSectionedGeometry(params: Params): THREE.BufferGeometry {
-  const { spacing, poleDiameter, baseMargin } = params;
   const sections = calculateSections(params);
   const ns = numSectionsPerSide(params);
-  const LAYOUT_GAP = 5; // mm between sections in export
+  const LAYOUT_GAP = 5; // mm between sections in export layout
 
-  // Compute max section dimensions for consistent grid layout.
-  // Corner sections (exterior on both sides) are largest.
-  const radius = poleDiameter / 2;
-  const outerOffset = radius + baseMargin;
-  const innerOffset = spacing / 2;
-
+  // Pre-compute the plate dimensions of every section so we can derive a
+  // consistent grid layout (use max width/depth for uniform column/row spacing).
+  const halfPlate = plateSize(params) / 2;
   let maxW = 0;
   let maxD = 0;
   for (const s of sections) {
-    const leftOffset = s.colIdx === 0 ? outerOffset : innerOffset;
-    const rightOffset = s.colIdx === ns - 1 ? outerOffset : innerOffset;
-    const frontOffset = s.rowIdx === 0 ? outerOffset : innerOffset;
-    const backOffset = s.rowIdx === ns - 1 ? outerOffset : innerOffset;
-    const w = leftOffset + (s.iMax - s.iMin) * spacing + rightOffset;
-    const d = frontOffset + (s.jMax - s.jMin) * spacing + backOffset;
+    const plateXMin = s.colIdx === 0 ? -halfPlate : s.xMin;
+    const plateXMax = s.colIdx === ns - 1 ? halfPlate : s.xMax;
+    const plateZMin = s.rowIdx === 0 ? -halfPlate : s.zMin;
+    const plateZMax = s.rowIdx === ns - 1 ? halfPlate : s.zMax;
+    const w = plateXMax - plateXMin;
+    const d = plateZMax - plateZMin;
     if (w > maxW) maxW = w;
     if (d > maxD) maxD = d;
   }
@@ -150,7 +134,7 @@ function buildSectionedGeometry(params: Params): THREE.BufferGeometry {
   for (const section of sections) {
     const sectionGeo = buildOneSectionGeometry(section, params, ns);
 
-    // Place section in export grid (col in X, row in Z)
+    // Place section in export grid (col → X, row → Z)
     const offsetX = section.colIdx * (maxW + LAYOUT_GAP);
     const offsetZ = section.rowIdx * (maxD + LAYOUT_GAP);
     sectionGeo.translate(offsetX, 0, offsetZ);
@@ -165,12 +149,10 @@ function buildSectionedGeometry(params: Params): THREE.BufferGeometry {
 
 /**
  * Builds independent section geometries, one per section.
- * Each geometry has its own base plate centered at origin (not in a grid).
+ * Each geometry is centred at the origin (not arranged in a grid).
  * Used for split exports where each section is a standalone STL file.
  */
-export function buildIndependentSectionGeometries(
-  params: Params
-): SectionGeometryData[] {
+export function buildIndependentSectionGeometries(params: Params): SectionGeometryData[] {
   const sections = calculateSections(params);
   const ns = numSectionsPerSide(params);
   const result: SectionGeometryData[] = [];
@@ -178,9 +160,7 @@ export function buildIndependentSectionGeometries(
   for (const section of sections) {
     const geometry = buildOneSectionGeometry(section, params, ns);
 
-    // Verify geometry has data before centering
     if (geometry.attributes.position && geometry.attributes.position.count > 0) {
-      // Center the geometry so the base plate is centered at origin
       geometry.computeBoundingBox();
       const bb = geometry.boundingBox;
       if (bb) {
@@ -200,67 +180,66 @@ export function buildIndependentSectionGeometries(
 
 /**
  * Builds one section's geometry in local space.
- * Origin = bottom-left corner of the section's base plate.
+ * Origin = bottom-left corner of the section's base plate (world-space min corner).
  *
- * Exterior edges (the outermost sides of the full model) keep the full
- * `baseMargin + radius` offset so the assembled model matches the original
- * plate outline. Interior edges (shared with an adjacent section) use
- * `spacing / 2` so that placing two sections edge-to-edge restores the
- * correct pole-to-pole spacing at every seam.
+ * Exterior edges keep the full plate boundary (poleDiameter/2 + baseMargin beyond
+ * the grid). Interior edges are cut at the spatial split point so that placing two
+ * adjacent sections edge-to-edge restores the correct inter-pole spacing at seams.
  */
-function buildOneSectionGeometry(section: Section, params: Params, ns: number): THREE.BufferGeometry {
-  const {
-    spacing,
-    poleDiameter,
-    minHeight,
-    maxHeight,
-    baseHeight,
-    baseMargin,
-    heightFunction,
-    waveFrequency,
-    labelFontSize
-  } = params;
+function buildOneSectionGeometry(
+  section: Section,
+  params: Params,
+  ns: number
+): THREE.BufferGeometry {
+  const { poleDiameter, minHeight, maxHeight, baseHeight, heightFunction, waveFrequency, gridSize, labelFontSize } = params;
 
-  const n = poleCount(params);
   const radius = poleDiameter / 2;
+  const halfPlate = plateSize(params) / 2;
+  const half = gridSize / 2;
   const geometries: THREE.BufferGeometry[] = [];
 
-  // Per-side offsets:
-  //   exterior side → radius + baseMargin  (matches the original outer plate edge)
-  //   interior side → spacing / 2          (cut at midpoint between adjacent poles)
-  const outerOffset = radius + baseMargin;
-  const innerOffset = spacing / 2;
-  const leftOffset  = section.colIdx === 0      ? outerOffset : innerOffset;
-  const rightOffset = section.colIdx === ns - 1  ? outerOffset : innerOffset;
-  const frontOffset = section.rowIdx === 0      ? outerOffset : innerOffset;
-  const backOffset  = section.rowIdx === ns - 1  ? outerOffset : innerOffset;
+  // Plate extent in world space:
+  //   Exterior edge → full plate boundary
+  //   Interior edge → spatial split point (xMin / xMax)
+  const plateXMin = section.colIdx === 0 ? -halfPlate : section.xMin;
+  const plateXMax = section.colIdx === ns - 1 ? halfPlate : section.xMax;
+  const plateZMin = section.rowIdx === 0 ? -halfPlate : section.zMin;
+  const plateZMax = section.rowIdx === ns - 1 ? halfPlate : section.zMax;
+  const plateW = plateXMax - plateXMin;
+  const plateD = plateZMax - plateZMin;
 
-  // Section base plate dimensions in local space
-  const plateW = leftOffset + (section.iMax - section.iMin) * spacing + rightOffset;
-  const plateD = frontOffset + (section.jMax - section.jMin) * spacing + backOffset;
-
-  // Base plate: sits from Y=0 to Y=baseHeight, X=[0,plateW], Z=[0,plateD]
+  // Base plate in local space (origin at bottom-left-front corner)
   const baseGeo = new THREE.BoxGeometry(plateW, baseHeight, plateD);
   baseGeo.translate(plateW / 2, baseHeight / 2, plateD / 2);
   geometries.push(baseGeo);
 
-  // Poles
-  for (let j = section.jMin; j <= section.jMax; j++) {
-    for (let i = section.iMin; i <= section.iMax; i++) {
-      const h = poleHeight(i, j, n, heightFunction, waveFrequency, minHeight, maxHeight);
+  // Filter all layout positions to this section's bounds
+  const allPositions = generatePolePositions(params);
+  const sectionPositions = allPositions.filter(({ x, z }) => {
+    const inX =
+      section.colIdx === ns - 1
+        ? x >= section.xMin && x <= section.xMax
+        : x >= section.xMin && x < section.xMax;
+    const inZ =
+      section.rowIdx === ns - 1
+        ? z >= section.zMin && z <= section.zMax
+        : z >= section.zMin && z < section.zMax;
+    return inX && inZ;
+  });
 
-      // Local position: pole centre within this section's plate
-      const localX = leftOffset + (i - section.iMin) * spacing;
-      const localZ = frontOffset + (j - section.jMin) * spacing;
-      const localY = baseHeight + h / 2;
+  for (const { x, z } of sectionPositions) {
+    const h = poleHeightFromWorld(x, z, half, heightFunction, waveFrequency, minHeight, maxHeight);
+    // Convert world coords to local (section plate space)
+    const localX = x - plateXMin;
+    const localZ = z - plateZMin;
+    const localY = baseHeight + h / 2;
 
-      const poleGeo = new THREE.CylinderGeometry(radius, radius, h, 8, 1);
-      poleGeo.translate(localX, localY, localZ);
-      geometries.push(poleGeo);
-    }
+    const poleGeo = new THREE.CylinderGeometry(radius, radius, h, 8, 1);
+    poleGeo.translate(localX, localY, localZ);
+    geometries.push(poleGeo);
   }
 
-  // Embossed label on top of base plate
+  // Embossed section label
   const label = `${section.rowIdx + 1}.${section.colIdx + 1}`;
   const labelGeo = createLabelGeometry(label, labelFontSize, plateW, plateD, baseHeight);
   if (labelGeo) geometries.push(labelGeo);
@@ -288,16 +267,13 @@ function createLabelGeometry(
     const textGeo = new TextGeometry(text, {
       font: _font,
       size,
-      depth: 0.4, // emboss thickness in mm
+      depth: 0.4,
       curveSegments: 4,
       bevelEnabled: false
     });
 
     // TextGeometry faces +Z as extrusion direction and +Y as character height.
-    // Rotate −90° around X so the text lies flat on the XZ plane:
-    //   character width  → X (unchanged)
-    //   character height → Z
-    //   extrusion depth  → +Y (upward)
+    // Rotate −90° around X so the text lies flat on the XZ plane.
     textGeo.rotateX(-Math.PI / 2);
 
     textGeo.computeBoundingBox();
