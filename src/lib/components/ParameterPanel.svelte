@@ -157,6 +157,8 @@
           bind:value={params.baseMargin}
         />
       </div>
+
+      <p class="control-hint">Plate size: {fullPlateSize.toFixed(1)} × {fullPlateSize.toFixed(1)} mm</p>
     </section>
 
     <!-- ── HEIGHT FUNCTION ── -->
