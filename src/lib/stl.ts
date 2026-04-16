@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { STLExporter } from 'three/addons/exporters/STLExporter.js';
 import { buildExportGeometry, buildIndependentSectionGeometries } from './geometry.js';
 import type { Params } from './schema.js';
-import { generateSVGPlan } from './svg.js';
+import { generateSVGPlan, generateCombinedSVGPlan } from './svg.js';
 import JSZip from 'jszip';
 
 /**
@@ -81,6 +81,10 @@ export async function exportSplitAsZip(params: Params): Promise<void> {
       // Clean up
       geometry.dispose();
     }
+
+    // Add combined SVG with all sections laid out with 1cm gaps
+    const combinedSvg = generateCombinedSVGPlan(params);
+    zip.file(`all_sections_plan.svg`, combinedSvg);
 
     // Create and download zip
     const zipBlob = await zip.generateAsync({ type: 'blob' });
