@@ -103,7 +103,7 @@ export function effectivePoleHeight(
   customHeights: Record<string, number>
 ): number {
   const key = polePositionKey(x, z);
-  if (customHeights[key] != null) return customHeights[key];
+  if (customHeights[key] != null) return Math.max(minHeight, Math.min(maxHeight, customHeights[key]));
   return poleHeightFromWorld(x, z, halfGridSize, heightFunction, waveFrequency, minHeight, maxHeight);
 }
 
