@@ -247,7 +247,7 @@
           id="brushRadius"
           type="range"
           min="5"
-          max="300"
+          max="500"
           step="5"
           bind:value={params.brushRadius}
         />

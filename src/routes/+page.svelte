@@ -41,7 +41,7 @@
 
   <!-- Right: 3D viewport -->
   <main class="app-viewport">
-    <Scene {params} />
+    <Scene {params} onSculpt={(h) => (params.customHeights = h)} />
   </main>
 </div>
 

@@ -22,7 +22,7 @@ export const paramsSchema = z.object({
   waveFrequency: z.number().min(0.1).max(10).default(1),
 
   // Sculpt brush
-  brushRadius: z.number().min(5).max(300).default(40),
+  brushRadius: z.number().min(5).max(500).default(40),
   brushStrength: z.number().min(0.1).max(20).default(5),
   customHeights: z.record(z.string(), z.number()).default({}),
 

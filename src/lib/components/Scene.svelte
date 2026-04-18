@@ -9,7 +9,13 @@
   import { generatePolePositions } from '$lib/poleLayout';
   import * as THREE from 'three';
 
-  let { params }: { params: Params } = $props();
+  let {
+    params,
+    onSculpt
+  }: {
+    params: Params;
+    onSculpt: (h: Record<string, number>) => void;
+  } = $props();
 
   // Snapshot initial values so the camera position doesn't jump when params change.
   const initialDistance = untrack(() => Math.max(80, params.gridSize * 1.6 + params.maxHeight));
@@ -18,15 +24,18 @@
   let isSculpting = $state(false);
   let isPainting = $state(false);
   let lastMouseY = 0;
+  // Visual ring position — only updated when hovering (not during a stroke)
   let brushX = $state(0);
   let brushZ = $state(0);
+  // Anchor: frozen on pointerdown, used for applyBrush throughout the stroke
+  let paintAnchorX = 0;
+  let paintAnchorZ = 0;
   let brushVisible = $state(false);
 
-  // Three.js objects used for raycasting (created in SculptScene child)
+  // Three.js objects used for raycasting
   let raycaster = new THREE.Raycaster();
-  let hitPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0); // Y = 0, shifted per baseHeight
+  let hitPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 
-  // Canvas element ref & camera ref passed up from inner component
   let canvasEl: HTMLElement | null = null;
   let cameraRef: THREE.PerspectiveCamera | null = null;
 
@@ -61,35 +70,45 @@
       newHeights[key] = next;
     }
 
-    params.customHeights = newHeights;
+    onSculpt(newHeights);
   }
 
   function onPointerDown(e: PointerEvent) {
     if (!isSculpting) return;
     e.preventDefault();
+    updateHitPlane();
+    const hit = getWorldPointer(e);
+    if (hit) {
+      // Anchor the brush world position for the entire stroke
+      paintAnchorX = hit.x;
+      paintAnchorZ = hit.z;
+      brushX = hit.x;
+      brushZ = hit.z;
+    }
     isPainting = true;
     lastMouseY = e.clientY;
-    const hit = getWorldPointer(e);
-    if (hit) { brushX = hit.x; brushZ = hit.z; }
   }
 
   function onPointerMove(e: PointerEvent) {
     if (!isSculpting) return;
-    updateHitPlane();
-    const hit = getWorldPointer(e);
-    if (hit) {
-      brushX = hit.x;
-      brushZ = hit.z;
-      brushVisible = true;
-    }
 
-    if (isPainting && hit) {
+    if (isPainting) {
+      // During a stroke: keep the ring at the anchor, only read vertical mouse delta
+      brushVisible = true;
       const dy = lastMouseY - e.clientY; // positive = drag up = raise
       lastMouseY = e.clientY;
-      // Scale: brushStrength is already factored in applyBrush
       const delta = dy * (params.gridSize / 5000);
       if (Math.abs(delta) > 0.0001) {
-        applyBrush(hit.x, hit.z, delta);
+        applyBrush(paintAnchorX, paintAnchorZ, delta);
+      }
+    } else {
+      // Hovering: let the ring follow the cursor
+      updateHitPlane();
+      const hit = getWorldPointer(e);
+      if (hit) {
+        brushX = hit.x;
+        brushZ = hit.z;
+        brushVisible = true;
       }
     }
   }
@@ -101,6 +120,14 @@
   function onPointerLeave() {
     brushVisible = false;
     isPainting = false;
+  }
+
+  function onWheel(e: WheelEvent) {
+    if (!isSculpting) return;
+    e.preventDefault();
+    // Scroll up (negative deltaY) → larger brush, scroll down → smaller
+    const sign = e.deltaY > 0 ? -1 : 1;
+    params.brushRadius = Math.min(500, Math.max(5, params.brushRadius + sign * 10));
   }
 
   function toggleMode() {
@@ -123,6 +150,7 @@
     onpointermove={onPointerMove}
     onpointerup={onPointerUp}
     onpointerleave={onPointerLeave}
+    onwheel={onWheel}
     style={isSculpting ? 'cursor: crosshair;' : ''}
   >
     <Canvas renderMode="always">
@@ -191,7 +219,7 @@
   <!-- Sculpt mode hint -->
   {#if isSculpting}
     <div class="sculpt-hint">
-      Drag <strong>up</strong> to raise &nbsp;·&nbsp; Drag <strong>down</strong> to lower
+      Drag <strong>up</strong> to raise &nbsp;·&nbsp; Drag <strong>down</strong> to lower &nbsp;·&nbsp; Scroll to resize brush
     </div>
   {/if}
 </div>
