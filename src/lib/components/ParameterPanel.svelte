@@ -235,8 +235,22 @@
     <section class="param-section">
       <h2 class="section-heading">Sculpt Brush</h2>
       <p class="control-hint" style="margin-bottom: 10px;">
-        Click <strong style="color:#e2e8f0">Sculpt</strong> in the viewport to enter sculpt mode, then drag up/down on poles to raise or lower them.
+        Click <strong style="color:#e2e8f0">Sculpt</strong> in the viewport to enter sculpt mode.
       </p>
+
+      <div class="control-group">
+        <label class="control-label">Sculpt Mode</label>
+        <div class="radio-group">
+          <label class="radio-option">
+            <input type="radio" name="sculptMode" value="anchor" bind:group={params.sculptMode} />
+            <span>Anchor — drag up/down at a fixed point</span>
+          </label>
+          <label class="radio-option">
+            <input type="radio" name="sculptMode" value="path" bind:group={params.sculptMode} />
+            <span>Path — draw a stroke along the surface</span>
+          </label>
+        </div>
+      </div>
 
       <div class="control-group">
         <div class="control-label-row">

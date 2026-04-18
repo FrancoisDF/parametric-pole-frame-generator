@@ -24,13 +24,31 @@
   let isSculpting = $state(false);
   let isPainting = $state(false);
   let lastMouseY = 0;
-  // Visual ring position — only updated when hovering (not during a stroke)
+  // Visual ring position
   let brushX = $state(0);
   let brushZ = $state(0);
-  // Anchor: frozen on pointerdown, used for applyBrush throughout the stroke
+  // Anchor mode: frozen on pointerdown, used for applyBrush throughout the stroke
   let paintAnchorX = 0;
   let paintAnchorZ = 0;
+  // Path mode: last position where brush was applied (for stride spacing)
+  let lastAppliedX = 0;
+  let lastAppliedZ = 0;
+  let isShiftHeld = $state(false);
   let brushVisible = $state(false);
+
+  // Track shift key while sculpting
+  $effect(() => {
+    if (!isSculpting) return;
+    function onKeyDown(e: KeyboardEvent) { if (e.key === 'Shift') isShiftHeld = true; }
+    function onKeyUp(e: KeyboardEvent) { if (e.key === 'Shift') isShiftHeld = false; }
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+      isShiftHeld = false;
+    };
+  });
 
   // Three.js objects used for raycasting
   let raycaster = new THREE.Raycaster();
@@ -73,42 +91,77 @@
     onSculpt(newHeights);
   }
 
+  function pathDelta() {
+    return params.brushStrength * 0.1 * (isShiftHeld ? -1 : 1);
+  }
+
   function onPointerDown(e: PointerEvent) {
     if (!isSculpting) return;
     e.preventDefault();
     updateHitPlane();
     const hit = getWorldPointer(e);
-    if (hit) {
-      // Anchor the brush world position for the entire stroke
-      paintAnchorX = hit.x;
-      paintAnchorZ = hit.z;
-      brushX = hit.x;
-      brushZ = hit.z;
+
+    if (params.sculptMode === 'path') {
+      if (hit) {
+        brushX = hit.x;
+        brushZ = hit.z;
+        lastAppliedX = hit.x;
+        lastAppliedZ = hit.z;
+        applyBrush(hit.x, hit.z, pathDelta());
+      }
+      isPainting = true;
+      brushVisible = true;
+    } else {
+      // Anchor mode
+      if (hit) {
+        paintAnchorX = hit.x;
+        paintAnchorZ = hit.z;
+        brushX = hit.x;
+        brushZ = hit.z;
+      }
+      isPainting = true;
+      lastMouseY = e.clientY;
     }
-    isPainting = true;
-    lastMouseY = e.clientY;
   }
 
   function onPointerMove(e: PointerEvent) {
     if (!isSculpting) return;
 
-    if (isPainting) {
-      // During a stroke: keep the ring at the anchor, only read vertical mouse delta
-      brushVisible = true;
-      const dy = lastMouseY - e.clientY; // positive = drag up = raise
-      lastMouseY = e.clientY;
-      const delta = dy * (params.gridSize / 5000);
-      if (Math.abs(delta) > 0.0001) {
-        applyBrush(paintAnchorX, paintAnchorZ, delta);
-      }
-    } else {
-      // Hovering: let the ring follow the cursor
+    if (params.sculptMode === 'path') {
       updateHitPlane();
       const hit = getWorldPointer(e);
       if (hit) {
         brushX = hit.x;
         brushZ = hit.z;
         brushVisible = true;
+        if (isPainting) {
+          const dist = Math.sqrt((hit.x - lastAppliedX) ** 2 + (hit.z - lastAppliedZ) ** 2);
+          if (dist >= params.brushRadius * 0.2) {
+            applyBrush(hit.x, hit.z, pathDelta());
+            lastAppliedX = hit.x;
+            lastAppliedZ = hit.z;
+          }
+        }
+      }
+    } else {
+      // Anchor mode
+      if (isPainting) {
+        brushVisible = true;
+        const dy = lastMouseY - e.clientY; // positive = drag up = raise
+        lastMouseY = e.clientY;
+        const delta = dy * (params.gridSize / 5000);
+        if (Math.abs(delta) > 0.0001) {
+          applyBrush(paintAnchorX, paintAnchorZ, delta);
+        }
+      } else {
+        // Hovering: let the ring follow the cursor
+        updateHitPlane();
+        const hit = getWorldPointer(e);
+        if (hit) {
+          brushX = hit.x;
+          brushZ = hit.z;
+          brushVisible = true;
+        }
       }
     }
   }
@@ -219,7 +272,11 @@
   <!-- Sculpt mode hint -->
   {#if isSculpting}
     <div class="sculpt-hint">
-      Drag <strong>up</strong> to raise &nbsp;·&nbsp; Drag <strong>down</strong> to lower &nbsp;·&nbsp; Scroll to resize brush
+      {#if params.sculptMode === 'path'}
+        Drag to <strong>raise</strong> &nbsp;·&nbsp; <strong>Shift</strong>+drag to lower &nbsp;·&nbsp; Scroll to resize brush
+      {:else}
+        Drag <strong>up</strong> to raise &nbsp;·&nbsp; Drag <strong>down</strong> to lower &nbsp;·&nbsp; Scroll to resize brush
+      {/if}
     </div>
   {/if}
 </div>
