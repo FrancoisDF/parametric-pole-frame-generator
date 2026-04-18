@@ -241,52 +241,40 @@
     </Canvas>
   </div>
 
-  <!-- Sculpt brush HUD — appears above the toggle button when sculpting -->
+  <!-- Sculpt brush HUD — compact bar above the toggle button -->
   {#if isSculpting}
     <div class="sculpt-hud">
-      <div class="hud-section">
-        <span class="hud-label">Mode</span>
-        <div class="hud-mode-btns">
-          <button
-            class="hud-mode-btn"
-            class:active={params.sculptMode === 'anchor'}
-            onclick={() => (params.sculptMode = 'anchor')}
-          >Anchor</button>
-          <button
-            class="hud-mode-btn"
-            class:active={params.sculptMode === 'path'}
-            onclick={() => (params.sculptMode = 'path')}
-          >Path</button>
-        </div>
+      <div class="hud-mode-btns">
+        <button
+          class="hud-mode-btn"
+          class:active={params.sculptMode === 'anchor'}
+          onclick={() => (params.sculptMode = 'anchor')}
+        >Anchor</button>
+        <button
+          class="hud-mode-btn"
+          class:active={params.sculptMode === 'path'}
+          onclick={() => (params.sculptMode = 'path')}
+        >Path</button>
       </div>
 
-      <div class="hud-section">
-        <div class="hud-slider-row">
-          <span class="hud-label">Radius</span>
-          <input type="range" min="5" max="500" step="5" bind:value={params.brushRadius} class="hud-slider" />
-          <span class="hud-val">{params.brushRadius}</span>
-        </div>
-        <div class="hud-slider-row">
-          <span class="hud-label">Strength</span>
-          <input type="range" min="0.1" max="20" step="0.1" bind:value={params.brushStrength} class="hud-slider" />
-          <span class="hud-val">{params.brushStrength.toFixed(1)}</span>
-        </div>
+      <div class="hud-divider"></div>
+
+      <div class="hud-slider-row">
+        <span class="hud-label">R</span>
+        <input type="range" min="5" max="500" step="5" bind:value={params.brushRadius} class="hud-slider" />
+        <span class="hud-val">{params.brushRadius}</span>
+      </div>
+      <div class="hud-slider-row">
+        <span class="hud-label">S</span>
+        <input type="range" min="0.1" max="20" step="0.1" bind:value={params.brushStrength} class="hud-slider" />
+        <span class="hud-val">{params.brushStrength.toFixed(1)}</span>
       </div>
 
-      {#if Object.keys(params.customHeights).length > 0}
-        <button class="hud-clear" onclick={() => onSculpt({})}>
-          Clear Sculpt ({Object.keys(params.customHeights).length} poles)
-        </button>
-      {/if}
+      <div class="hud-divider"></div>
 
-      <div class="hud-hint">
-        {#if params.sculptMode === 'path'}
-          Drag to <strong>raise</strong> &nbsp;·&nbsp; <strong>Shift</strong>+drag to lower
-        {:else}
-          Drag <strong>up</strong> to raise &nbsp;·&nbsp; drag <strong>down</strong> to lower
-        {/if}
-        &nbsp;·&nbsp; Scroll to zoom
-      </div>
+      <span class="hud-hint">
+        {params.sculptMode === 'path' ? 'Drag · Shift=lower' : 'Drag ↑↓ · Shift=lower'}
+      </span>
     </div>
   {/if}
 
@@ -364,121 +352,91 @@
     background: rgba(234, 88, 12, 0.3);
   }
 
-  /* ── Sculpt HUD — above the toggle button ── */
+  /* ── Sculpt HUD — compact pill above the toggle ── */
   .sculpt-hud {
     position: absolute;
-    bottom: 62px;
+    bottom: 54px;
     left: 50%;
     transform: translateX(-50%);
-    width: 320px;
-    background: rgba(15, 23, 42, 0.92);
-    border: 1px solid #334155;
-    border-radius: 12px;
-    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: rgba(15, 23, 42, 0.82);
+    border: 1px solid #2d3f55;
+    border-radius: 999px;
     backdrop-filter: blur(8px);
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
     z-index: 10;
-  }
-
-  .hud-section {
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
-  }
-
-  .hud-label {
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: #64748b;
-    flex-shrink: 0;
+    white-space: nowrap;
   }
 
   .hud-mode-btns {
     display: flex;
-    gap: 6px;
+    gap: 3px;
   }
 
   .hud-mode-btn {
-    flex: 1;
-    padding: 5px 10px;
-    background: #1e293b;
-    color: #94a3b8;
-    border: 1px solid #334155;
-    border-radius: 6px;
+    padding: 3px 9px;
+    background: transparent;
+    color: #64748b;
+    border: 1px solid transparent;
+    border-radius: 999px;
     font-size: 11px;
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    transition: background 0.12s, color 0.12s, border-color 0.12s;
   }
 
   .hud-mode-btn:hover {
-    background: #263348;
-    color: #cbd5e1;
+    color: #94a3b8;
   }
 
   .hud-mode-btn.active {
-    background: rgba(59, 130, 246, 0.2);
+    background: rgba(59, 130, 246, 0.18);
     color: #60a5fa;
-    border-color: #3b82f6;
+    border-color: rgba(59, 130, 246, 0.4);
+  }
+
+  .hud-divider {
+    width: 1px;
+    height: 16px;
+    background: #1e293b;
+    flex-shrink: 0;
+  }
+
+  .hud-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #475569;
+    flex-shrink: 0;
+    width: 10px;
+    text-align: center;
   }
 
   .hud-slider-row {
     display: flex;
     align-items: center;
-    gap: 8px;
-  }
-
-  .hud-slider-row .hud-label {
-    width: 52px;
+    gap: 5px;
   }
 
   .hud-slider {
-    flex: 1;
+    width: 72px;
     accent-color: #3b82f6;
     cursor: pointer;
-    min-width: 0;
   }
 
   .hud-val {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 600;
     color: #60a5fa;
     font-variant-numeric: tabular-nums;
-    width: 38px;
+    width: 28px;
     text-align: right;
     flex-shrink: 0;
   }
 
-  .hud-clear {
-    width: 100%;
-    padding: 6px 12px;
-    background: rgba(239, 68, 68, 0.12);
-    color: #f87171;
-    border: 1px solid rgba(239, 68, 68, 0.35);
-    border-radius: 6px;
-    font-size: 11px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.15s, border-color 0.15s;
-  }
-
-  .hud-clear:hover {
-    background: rgba(239, 68, 68, 0.22);
-    border-color: rgba(239, 68, 68, 0.6);
-  }
-
   .hud-hint {
     font-size: 10px;
-    color: #475569;
-    text-align: center;
-    line-height: 1.4;
-  }
-
-  .hud-hint strong {
-    color: #94a3b8;
+    color: #334155;
   }
 </style>

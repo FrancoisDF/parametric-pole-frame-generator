@@ -231,6 +231,19 @@
       {/if}
     </section>
 
+    <!-- ── SCULPT ── -->
+    {#if Object.keys(params.customHeights).length > 0}
+      <section class="param-section">
+        <h2 class="section-heading">Sculpt</h2>
+        <div class="control-group" style="margin-bottom:0">
+          <p class="control-hint" style="margin-bottom:6px">{Object.keys(params.customHeights).length} pole{Object.keys(params.customHeights).length === 1 ? '' : 's'} sculpted</p>
+          <button class="clear-sculpt-btn" onclick={() => { params.customHeights = {}; }}>
+            Clear Sculpt
+          </button>
+        </div>
+      </section>
+    {/if}
+
     <!-- ── PRINT SPLITTING ── -->
     <section class="param-section">
       <h2 class="section-heading">Print Splitting</h2>
@@ -480,6 +493,24 @@
   .radio-option input[type='radio'] {
     accent-color: #3b82f6;
     cursor: pointer;
+  }
+
+  .clear-sculpt-btn {
+    width: 100%;
+    padding: 7px 12px;
+    background: rgba(239, 68, 68, 0.12);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  .clear-sculpt-btn:hover {
+    background: rgba(239, 68, 68, 0.22);
+    border-color: rgba(239, 68, 68, 0.6);
   }
 
 </style>
