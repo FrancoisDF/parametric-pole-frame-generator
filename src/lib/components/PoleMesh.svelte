@@ -1,7 +1,7 @@
 <script lang="ts">
   import { useThrelte } from '@threlte/core';
   import * as THREE from 'three';
-  import { poleHeightFromWorld } from '$lib/heightFunctions';
+  import { effectivePoleHeight } from '$lib/heightFunctions';
   import { generatePolePositions } from '$lib/poleLayout';
   import type { Params } from '$lib/schema';
   import { onDestroy } from 'svelte';
@@ -35,7 +35,7 @@
   }
 
   function buildInstances() {
-    const { poleDiameter, minHeight, maxHeight, baseHeight, heightFunction, waveFrequency, gridSize } =
+    const { poleDiameter, minHeight, maxHeight, baseHeight, heightFunction, waveFrequency, gridSize, customHeights } =
       params;
 
     disposeCurrent();
@@ -55,7 +55,7 @@
 
     for (let idx = 0; idx < positions.length; idx++) {
       const { x, z } = positions[idx];
-      const h = poleHeightFromWorld(x, z, half, heightFunction, waveFrequency, minHeight, maxHeight);
+      const h = effectivePoleHeight(x, z, half, heightFunction, waveFrequency, minHeight, maxHeight, customHeights);
       const y = baseHeight + h / 2; // centre of the scaled cylinder
 
       dummy.position.set(x, y, z);
@@ -81,7 +81,9 @@
       params.heightFunction,
       params.waveFrequency,
       params.poleLayout,
-      params.layoutSeed
+      params.layoutSeed,
+      // Trigger rebuild when any custom height changes
+      JSON.stringify(params.customHeights)
     ];
     void _;
 

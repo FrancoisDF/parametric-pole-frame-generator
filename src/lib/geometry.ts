@@ -3,7 +3,7 @@ import { FontLoader } from 'three/addons/loaders/FontLoader.js';
 import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
 import fontJson from 'three/examples/fonts/helvetiker_regular.typeface.json';
 import { plateSize, type Params } from './schema.js';
-import { poleHeightFromWorld } from './heightFunctions.js';
+import { effectivePoleHeight } from './heightFunctions.js';
 import { generatePolePositions } from './poleLayout.js';
 import { calculateSections, numSectionsPerSide, type Section } from './sectioning.js';
 
@@ -95,7 +95,7 @@ function buildSingleGeometry(params: Params): THREE.BufferGeometry {
   // Poles — iterate position list from the active layout
   const radius = poleDiameter / 2;
   for (const { x, z } of generatePolePositions(params)) {
-    const h = poleHeightFromWorld(x, z, half, heightFunction, waveFrequency, minHeight, maxHeight);
+    const h = effectivePoleHeight(x, z, half, heightFunction, waveFrequency, minHeight, maxHeight, params.customHeights);
     const poleGeo = new THREE.CylinderGeometry(radius, radius, h, 8, 1);
     poleGeo.translate(x, baseHeight + h / 2, z);
     geometries.push(poleGeo);
@@ -228,7 +228,7 @@ function buildOneSectionGeometry(
   });
 
   for (const { x, z } of sectionPositions) {
-    const h = poleHeightFromWorld(x, z, half, heightFunction, waveFrequency, minHeight, maxHeight);
+    const h = effectivePoleHeight(x, z, half, heightFunction, waveFrequency, minHeight, maxHeight, params.customHeights);
     // Convert world coords to local (section plate space)
     const localX = x - plateXMin;
     const localZ = z - plateZMin;

@@ -21,6 +21,12 @@ export const paramsSchema = z.object({
   heightFunction: z.enum(['wave', 'hill', 'pyramid', 'flat', 'ripple', 'saddle', 'checkerboard', 'spiral']).default('wave'),
   waveFrequency: z.number().min(0.1).max(10).default(1),
 
+  // Sculpt brush
+  sculptMode: z.enum(['anchor', 'path']).default('anchor'),
+  brushRadius: z.number().min(5).max(500).default(40),
+  brushStrength: z.number().min(0.1).max(20).default(5),
+  customHeights: z.record(z.string(), z.number()).default({}),
+
   // Print splitting
   splitEnabled: z.boolean().default(false),
   splitMode: z.enum(['grid', 'printer']).default('grid'),

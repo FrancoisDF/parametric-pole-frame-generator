@@ -81,6 +81,33 @@ export function poleHeightFromWorld(
 }
 
 /**
+ * Returns a stable string key for a pole at world position (x, z).
+ * Uses 0.1 mm precision so keys survive baseHeight/diameter changes.
+ */
+export function polePositionKey(x: number, z: number): string {
+  return `${Math.round(x * 10)},${Math.round(z * 10)}`;
+}
+
+/**
+ * Returns the effective height for a pole, respecting any custom sculpt
+ * override stored in params.customHeights. Falls back to the math function.
+ */
+export function effectivePoleHeight(
+  x: number,
+  z: number,
+  halfGridSize: number,
+  heightFunction: string,
+  waveFrequency: number,
+  minHeight: number,
+  maxHeight: number,
+  customHeights: Record<string, number>
+): number {
+  const key = polePositionKey(x, z);
+  if (customHeights[key] != null) return customHeights[key];
+  return poleHeightFromWorld(x, z, halfGridSize, heightFunction, waveFrequency, minHeight, maxHeight);
+}
+
+/**
  * Convenience: computes the actual pole height in mm for grid position (i, j)
  * given the full params object.
  */
