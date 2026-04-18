@@ -3,6 +3,9 @@
   import ExportButton from '$lib/components/ExportButton.svelte';
   import Scene from '$lib/components/Scene.svelte';
   import { params, STORAGE_KEY } from '$lib/params.svelte';
+  import { untrack } from 'svelte';
+  import { generatePolePositions } from '$lib/poleLayout';
+  import { polePositionKey } from '$lib/heightFunctions';
 
   let saveTimeout: ReturnType<typeof setTimeout>;
 
@@ -25,6 +28,100 @@
         }
       }
     }, 300);
+  });
+
+  // ── Sculpt shape preservation across layout changes ──────────────────────
+
+  /**
+   * IDW-interpolates sculpted heights from old pole positions to new ones,
+   * working in a normalized [-1, 1] space so the shape scales correctly.
+   */
+  function remapSculpt(
+    oldPositions: Array<{ x: number; z: number }>,
+    oldHeights: Record<string, number>,
+    oldHalf: number,
+    newPositions: Array<{ x: number; z: number }>,
+    newHalf: number,
+    minH: number,
+    maxH: number
+  ): Record<string, number> {
+    const sculpted = oldPositions
+      .filter(({ x, z }) => oldHeights[polePositionKey(x, z)] != null)
+      .map(({ x, z }) => ({
+        nx: oldHalf > 0 ? x / oldHalf : 0,
+        nz: oldHalf > 0 ? z / oldHalf : 0,
+        h: oldHeights[polePositionKey(x, z)]
+      }));
+
+    if (sculpted.length === 0) return {};
+
+    const result: Record<string, number> = {};
+    const radius = 0.6; // search radius in normalized [-1, 1] space
+
+    for (const { x, z } of newPositions) {
+      const nx = newHalf > 0 ? x / newHalf : 0;
+      const nz = newHalf > 0 ? z / newHalf : 0;
+
+      let totalW = 0;
+      let weightedH = 0;
+      let count = 0;
+
+      for (const s of sculpted) {
+        const d = Math.sqrt((nx - s.nx) ** 2 + (nz - s.nz) ** 2);
+        if (d > radius) continue;
+        count++;
+        const w = 1 / (d * d + 0.001);
+        totalW += w;
+        weightedH += w * s.h;
+      }
+
+      if (count > 0) {
+        result[polePositionKey(x, z)] = Math.max(minH, Math.min(maxH, weightedH / totalW));
+      }
+    }
+
+    return result;
+  }
+
+  // Plain variables (not $state) — Effects read/write these but don't subscribe to them.
+  let snapPositions: Array<{ x: number; z: number }> = [];
+  let snapHeights: Record<string, number> = {};
+  let snapHalf = params.gridSize / 2;
+  let prevLayoutKey = '';
+
+  // Effect A: whenever the sculpt changes, refresh the position/height snapshot.
+  // Reads customHeights reactively; reads positions via untrack to avoid tracking layout params.
+  $effect(() => {
+    snapHeights = params.customHeights; // subscribe to sculpt changes
+    untrack(() => {
+      snapPositions = generatePolePositions(params);
+      snapHalf = params.gridSize / 2;
+    });
+  });
+
+  // Effect B: whenever the layout changes, remap the sculpt onto the new pole positions.
+  // Reads layout params (via the key) reactively; reads snapHeights as a plain variable.
+  $effect(() => {
+    const key = `${params.gridSize}|${params.spacing}|${params.poleLayout}|${params.layoutSeed}`;
+    if (key !== prevLayoutKey && prevLayoutKey !== '') {
+      if (Object.keys(snapHeights).length > 0) {
+        const newPositions = untrack(() => generatePolePositions(params));
+        const newHalf = params.gridSize / 2;
+        const remapped = remapSculpt(
+          snapPositions,
+          snapHeights,
+          snapHalf,
+          newPositions,
+          newHalf,
+          params.minHeight,
+          params.maxHeight
+        );
+        untrack(() => {
+          params.customHeights = remapped;
+        });
+      }
+    }
+    prevLayoutKey = key;
   });
 </script>
 

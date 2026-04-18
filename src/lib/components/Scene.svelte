@@ -84,7 +84,7 @@
       const weight = Math.exp(-3 * (dist / brushRadius) ** 2);
       const key = polePositionKey(x, z);
       const current = effectivePoleHeight(x, z, half, heightFunction, waveFrequency, minHeight, maxHeight, newHeights);
-      const next = Math.max(0.01, current + heightDelta * weight * brushStrength);
+      const next = Math.max(minHeight, Math.min(maxHeight, current + heightDelta * weight * brushStrength));
       newHeights[key] = next;
     }
 
@@ -175,14 +175,6 @@
     isPainting = false;
   }
 
-  function onWheel(e: WheelEvent) {
-    if (!isSculpting) return;
-    e.preventDefault();
-    // Scroll up (negative deltaY) → larger brush, scroll down → smaller
-    const sign = e.deltaY > 0 ? -1 : 1;
-    params.brushRadius = Math.min(500, Math.max(5, params.brushRadius + sign * 10));
-  }
-
   function toggleMode() {
     isSculpting = !isSculpting;
     if (!isSculpting) {
@@ -192,7 +184,6 @@
   }
 </script>
 
-<!-- Overlay toggle button -->
 <div class="scene-outer">
   <div
     class="scene-wrapper"
@@ -203,7 +194,6 @@
     onpointermove={onPointerMove}
     onpointerup={onPointerUp}
     onpointerleave={onPointerLeave}
-    onwheel={onWheel}
     style={isSculpting ? 'cursor: crosshair;' : ''}
   >
     <Canvas renderMode="always">
@@ -216,11 +206,13 @@
         position={[initialDistance * 0.8, initialDistance * 0.7, initialDistance]}
         oncreate={(ref) => { cameraRef = ref; }}
       >
+        <!-- Allow zoom always; disable rotate & pan during sculpt so scroll = zoom -->
         <OrbitControls
           enableDamping
           dampingFactor={0.08}
           target={[0, 15, 0]}
-          enabled={!isSculpting}
+          enableRotate={!isSculpting}
+          enablePan={!isSculpting}
         />
       </T.PerspectiveCamera>
 
@@ -249,7 +241,56 @@
     </Canvas>
   </div>
 
-  <!-- Mode toggle button -->
+  <!-- Sculpt brush HUD — appears above the toggle button when sculpting -->
+  {#if isSculpting}
+    <div class="sculpt-hud">
+      <div class="hud-section">
+        <span class="hud-label">Mode</span>
+        <div class="hud-mode-btns">
+          <button
+            class="hud-mode-btn"
+            class:active={params.sculptMode === 'anchor'}
+            onclick={() => (params.sculptMode = 'anchor')}
+          >Anchor</button>
+          <button
+            class="hud-mode-btn"
+            class:active={params.sculptMode === 'path'}
+            onclick={() => (params.sculptMode = 'path')}
+          >Path</button>
+        </div>
+      </div>
+
+      <div class="hud-section">
+        <div class="hud-slider-row">
+          <span class="hud-label">Radius</span>
+          <input type="range" min="5" max="500" step="5" bind:value={params.brushRadius} class="hud-slider" />
+          <span class="hud-val">{params.brushRadius}</span>
+        </div>
+        <div class="hud-slider-row">
+          <span class="hud-label">Strength</span>
+          <input type="range" min="0.1" max="20" step="0.1" bind:value={params.brushStrength} class="hud-slider" />
+          <span class="hud-val">{params.brushStrength.toFixed(1)}</span>
+        </div>
+      </div>
+
+      {#if Object.keys(params.customHeights).length > 0}
+        <button class="hud-clear" onclick={() => onSculpt({})}>
+          Clear Sculpt ({Object.keys(params.customHeights).length} poles)
+        </button>
+      {/if}
+
+      <div class="hud-hint">
+        {#if params.sculptMode === 'path'}
+          Drag to <strong>raise</strong> &nbsp;·&nbsp; <strong>Shift</strong>+drag to lower
+        {:else}
+          Drag <strong>up</strong> to raise &nbsp;·&nbsp; drag <strong>down</strong> to lower
+        {/if}
+        &nbsp;·&nbsp; Scroll to zoom
+      </div>
+    </div>
+  {/if}
+
+  <!-- Mode toggle button — bottom center -->
   <button
     class="mode-toggle"
     class:sculpt-active={isSculpting}
@@ -268,17 +309,6 @@
       Sculpt
     {/if}
   </button>
-
-  <!-- Sculpt mode hint -->
-  {#if isSculpting}
-    <div class="sculpt-hint">
-      {#if params.sculptMode === 'path'}
-        Drag to <strong>raise</strong> &nbsp;·&nbsp; <strong>Shift</strong>+drag to lower &nbsp;·&nbsp; Scroll to resize brush
-      {:else}
-        Drag <strong>up</strong> to raise &nbsp;·&nbsp; Drag <strong>down</strong> to lower &nbsp;·&nbsp; Scroll to resize brush
-      {/if}
-    </div>
-  {/if}
 </div>
 
 <style>
@@ -294,10 +324,12 @@
     background: #0d1117;
   }
 
+  /* ── Mode toggle — bottom center ── */
   .mode-toggle {
     position: absolute;
-    top: 12px;
-    right: 12px;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
     align-items: center;
     gap: 6px;
@@ -313,6 +345,7 @@
     transition: background 0.15s, border-color 0.15s, color 0.15s;
     user-select: none;
     z-index: 10;
+    white-space: nowrap;
   }
 
   .mode-toggle:hover {
@@ -331,24 +364,121 @@
     background: rgba(234, 88, 12, 0.3);
   }
 
-  .sculpt-hint {
+  /* ── Sculpt HUD — above the toggle button ── */
+  .sculpt-hud {
     position: absolute;
-    bottom: 14px;
+    bottom: 62px;
     left: 50%;
     transform: translateX(-50%);
-    padding: 6px 14px;
-    background: rgba(15, 23, 42, 0.8);
-    color: #94a3b8;
+    width: 320px;
+    background: rgba(15, 23, 42, 0.92);
     border: 1px solid #334155;
-    border-radius: 20px;
-    font-size: 11px;
-    backdrop-filter: blur(6px);
-    pointer-events: none;
+    border-radius: 12px;
+    padding: 12px 14px;
+    backdrop-filter: blur(8px);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
     z-index: 10;
-    white-space: nowrap;
   }
 
-  .sculpt-hint strong {
-    color: #e2e8f0;
+  .hud-section {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  .hud-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #64748b;
+    flex-shrink: 0;
+  }
+
+  .hud-mode-btns {
+    display: flex;
+    gap: 6px;
+  }
+
+  .hud-mode-btn {
+    flex: 1;
+    padding: 5px 10px;
+    background: #1e293b;
+    color: #94a3b8;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+
+  .hud-mode-btn:hover {
+    background: #263348;
+    color: #cbd5e1;
+  }
+
+  .hud-mode-btn.active {
+    background: rgba(59, 130, 246, 0.2);
+    color: #60a5fa;
+    border-color: #3b82f6;
+  }
+
+  .hud-slider-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .hud-slider-row .hud-label {
+    width: 52px;
+  }
+
+  .hud-slider {
+    flex: 1;
+    accent-color: #3b82f6;
+    cursor: pointer;
+    min-width: 0;
+  }
+
+  .hud-val {
+    font-size: 11px;
+    font-weight: 600;
+    color: #60a5fa;
+    font-variant-numeric: tabular-nums;
+    width: 38px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .hud-clear {
+    width: 100%;
+    padding: 6px 12px;
+    background: rgba(239, 68, 68, 0.12);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  .hud-clear:hover {
+    background: rgba(239, 68, 68, 0.22);
+    border-color: rgba(239, 68, 68, 0.6);
+  }
+
+  .hud-hint {
+    font-size: 10px;
+    color: #475569;
+    text-align: center;
+    line-height: 1.4;
+  }
+
+  .hud-hint strong {
+    color: #94a3b8;
   }
 </style>

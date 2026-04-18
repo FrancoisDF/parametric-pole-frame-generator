@@ -231,70 +231,6 @@
       {/if}
     </section>
 
-    <!-- ── SCULPT BRUSH ── -->
-    <section class="param-section">
-      <h2 class="section-heading">Sculpt Brush</h2>
-      <p class="control-hint" style="margin-bottom: 10px;">
-        Click <strong style="color:#e2e8f0">Sculpt</strong> in the viewport to enter sculpt mode.
-      </p>
-
-      <div class="control-group">
-        <label class="control-label">Sculpt Mode</label>
-        <div class="radio-group">
-          <label class="radio-option">
-            <input type="radio" name="sculptMode" value="anchor" bind:group={params.sculptMode} />
-            <span>Anchor — drag up/down at a fixed point</span>
-          </label>
-          <label class="radio-option">
-            <input type="radio" name="sculptMode" value="path" bind:group={params.sculptMode} />
-            <span>Path — draw a stroke along the surface</span>
-          </label>
-        </div>
-      </div>
-
-      <div class="control-group">
-        <div class="control-label-row">
-          <label class="control-label" for="brushRadius">Brush Radius</label>
-          <span class="control-value">{params.brushRadius} mm</span>
-        </div>
-        <input
-          id="brushRadius"
-          type="range"
-          min="5"
-          max="500"
-          step="5"
-          bind:value={params.brushRadius}
-        />
-      </div>
-
-      <div class="control-group">
-        <div class="control-label-row">
-          <label class="control-label" for="brushStrength">Brush Strength</label>
-          <span class="control-value">{params.brushStrength.toFixed(1)}</span>
-        </div>
-        <input
-          id="brushStrength"
-          type="range"
-          min="0.1"
-          max="20"
-          step="0.1"
-          bind:value={params.brushStrength}
-        />
-      </div>
-
-      {#if Object.keys(params.customHeights).length > 0}
-        <div class="control-group">
-          <p class="control-hint">{Object.keys(params.customHeights).length} pole{Object.keys(params.customHeights).length === 1 ? '' : 's'} sculpted</p>
-          <button
-            class="clear-sculpt-btn"
-            onclick={() => { params.customHeights = {}; }}
-          >
-            Clear Sculpt
-          </button>
-        </div>
-      {/if}
-    </section>
-
     <!-- ── PRINT SPLITTING ── -->
     <section class="param-section">
       <h2 class="section-heading">Print Splitting</h2>
@@ -546,22 +482,4 @@
     cursor: pointer;
   }
 
-  .clear-sculpt-btn {
-    margin-top: 6px;
-    width: 100%;
-    padding: 7px 12px;
-    background: rgba(239, 68, 68, 0.12);
-    color: #f87171;
-    border: 1px solid rgba(239, 68, 68, 0.35);
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.15s, border-color 0.15s;
-  }
-
-  .clear-sculpt-btn:hover {
-    background: rgba(239, 68, 68, 0.22);
-    border-color: rgba(239, 68, 68, 0.6);
-  }
 </style>
