@@ -8,6 +8,7 @@
   import { polePositionKey, effectivePoleHeight } from '$lib/heightFunctions';
   import { generatePolePositions } from '$lib/poleLayout';
   import * as THREE from 'three';
+  import { theme } from '$lib/theme.svelte';
 
   let {
     params,
@@ -223,7 +224,7 @@
 
       <!-- Ground grid helper -->
       <T.GridHelper
-        args={[2000, 100, '#1e293b', '#1e293b']}
+        args={[2000, 100, theme.current === 'light' ? '#cbd5e1' : '#1e293b', theme.current === 'light' ? '#cbd5e1' : '#1e293b']}
         position={[0, -0.5, 0]}
       />
 
@@ -309,7 +310,7 @@
   .scene-wrapper {
     width: 100%;
     height: 100%;
-    background: #0d1117;
+    background: var(--bg-secondary);
   }
 
   /* ── Mode toggle — bottom center ── */
@@ -322,9 +323,9 @@
     align-items: center;
     gap: 6px;
     padding: 7px 13px;
-    background: rgba(15, 23, 42, 0.85);
-    color: #94a3b8;
-    border: 1px solid #334155;
+    background: color-mix(in srgb, var(--bg-primary) 85%, transparent);
+    color: var(--text-label);
+    border: 1px solid var(--border-muted);
     border-radius: 8px;
     font-size: 12px;
     font-weight: 600;
@@ -337,9 +338,9 @@
   }
 
   .mode-toggle:hover {
-    background: rgba(30, 41, 59, 0.95);
-    color: #e2e8f0;
-    border-color: #475569;
+    background: color-mix(in srgb, var(--bg-panel) 95%, transparent);
+    color: var(--text-secondary);
+    border-color: var(--text-muted);
   }
 
   .mode-toggle.sculpt-active {
@@ -362,8 +363,8 @@
     align-items: center;
     gap: 8px;
     padding: 6px 10px;
-    background: rgba(15, 23, 42, 0.82);
-    border: 1px solid #2d3f55;
+    background: color-mix(in srgb, var(--bg-primary) 82%, transparent);
+    border: 1px solid var(--border-muted);
     border-radius: 999px;
     backdrop-filter: blur(8px);
     z-index: 10;
@@ -378,7 +379,7 @@
   .hud-mode-btn {
     padding: 3px 9px;
     background: transparent;
-    color: #64748b;
+    color: var(--text-hint);
     border: 1px solid transparent;
     border-radius: 999px;
     font-size: 11px;
@@ -388,7 +389,7 @@
   }
 
   .hud-mode-btn:hover {
-    color: #94a3b8;
+    color: var(--text-label);
   }
 
   .hud-mode-btn.active {
@@ -400,14 +401,14 @@
   .hud-divider {
     width: 1px;
     height: 16px;
-    background: #1e293b;
+    background: var(--border-subtle);
     flex-shrink: 0;
   }
 
   .hud-label {
     font-size: 10px;
     font-weight: 700;
-    color: #475569;
+    color: var(--text-muted);
     flex-shrink: 0;
     width: 10px;
     text-align: center;
@@ -428,7 +429,7 @@
   .hud-val {
     font-size: 10px;
     font-weight: 600;
-    color: #60a5fa;
+    color: var(--text-accent);
     font-variant-numeric: tabular-nums;
     width: 28px;
     text-align: right;
@@ -437,6 +438,6 @@
 
   .hud-hint {
     font-size: 10px;
-    color: #334155;
+    color: var(--text-muted);
   }
 </style>

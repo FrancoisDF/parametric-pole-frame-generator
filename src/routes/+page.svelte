@@ -148,7 +148,7 @@
     width: 100vw;
     height: 100vh;
     overflow: hidden;
-    background: #0f172a;
+    background: var(--bg-primary);
   }
 
   .app-sidebar {
@@ -157,7 +157,7 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    border-right: 1px solid #1e293b;
+    border-right: 1px solid var(--border-subtle);
     /* Prevent the sidebar from overflowing the viewport */
     min-height: 0;
   }
@@ -168,14 +168,14 @@
     min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
-    background: #0f172a;
+    background: var(--bg-primary);
   }
 
   /* Always-visible footer that hosts the Export button */
   .sidebar-footer {
     flex-shrink: 0;
-    border-top: 1px solid #1e293b;
-    background: #0f172a;
+    border-top: 1px solid var(--border-subtle);
+    background: var(--bg-primary);
   }
 
   .app-viewport {
