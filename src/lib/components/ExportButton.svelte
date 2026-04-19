@@ -83,7 +83,7 @@
 <style>
   .export-area {
     padding: 14px 16px 20px;
-    border-top: 1px solid #1e293b;
+    border-top: 1px solid var(--border-subtle);
     flex-shrink: 0;
   }
 
@@ -139,7 +139,7 @@
   .export-meta {
     text-align: center;
     font-size: 10px;
-    color: #475569;
+    color: var(--text-muted);
     margin: 8px 0 0;
   }
 

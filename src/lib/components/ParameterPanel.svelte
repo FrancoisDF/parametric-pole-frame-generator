@@ -2,6 +2,7 @@
   import { poleCount, plateSize, type Params } from '$lib/schema';
   import { numSectionsPerSide, sectionPhysicalSize } from '$lib/sectioning';
   import { generatePolePositions } from '$lib/poleLayout';
+  import { theme } from '$lib/theme.svelte';
 
   let { params }: { params: Params } = $props();
 
@@ -25,7 +26,28 @@
 
 <div class="param-panel">
   <header class="panel-header">
-    <h1 class="panel-title">Pole Frame Generator</h1>
+    <div class="panel-header-top">
+      <h1 class="panel-title">Pole Frame Generator</h1>
+      <button
+        class="theme-toggle-btn"
+        onclick={() => theme.toggle()}
+        title={theme.current === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+        aria-label={theme.current === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+      >
+        {#if theme.current === 'dark'}
+          <!-- Sun icon -->
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="4"/>
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+          </svg>
+        {:else}
+          <!-- Moon icon -->
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+        {/if}
+      </button>
+    </div>
     <p class="panel-subtitle">All units in millimetres</p>
   </header>
 
@@ -347,27 +369,51 @@
   .param-panel {
     display: flex;
     flex-direction: column;
-    background: #0f172a;
-    color: #e2e8f0;
+    background: var(--bg-primary);
+    color: var(--text-secondary);
   }
 
   .panel-header {
     padding: 20px 16px 14px;
-    border-bottom: 1px solid #1e293b;
+    border-bottom: 1px solid var(--border-subtle);
     flex-shrink: 0;
+  }
+
+  .panel-header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2px;
+  }
+
+  .theme-toggle-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 2px;
+    display: flex;
+    align-items: center;
+    border-radius: 4px;
+    transition: color 0.15s;
+    flex-shrink: 0;
+  }
+
+  .theme-toggle-btn:hover {
+    color: var(--text-label);
   }
 
   .panel-title {
     font-size: 15px;
     font-weight: 700;
-    color: #f1f5f9;
-    margin: 0 0 2px;
+    color: var(--text-primary);
+    margin: 0;
     letter-spacing: -0.01em;
   }
 
   .panel-subtitle {
     font-size: 11px;
-    color: #64748b;
+    color: var(--text-hint);
     margin: 0;
   }
 
@@ -377,7 +423,7 @@
 
   .param-section {
     padding: 12px 16px;
-    border-bottom: 1px solid #1e293b;
+    border-bottom: 1px solid var(--border-subtle);
   }
 
   .param-section:last-child {
@@ -389,7 +435,7 @@
     font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: #475569;
+    color: var(--text-muted);
     margin: 0 0 12px;
   }
 
@@ -411,7 +457,7 @@
   .control-label {
     font-size: 12px;
     font-weight: 500;
-    color: #94a3b8;
+    color: var(--text-label);
     display: block;
     margin-bottom: 6px;
   }
@@ -423,21 +469,21 @@
   .control-value {
     font-size: 12px;
     font-weight: 600;
-    color: #60a5fa;
+    color: var(--text-accent);
     font-variant-numeric: tabular-nums;
   }
 
   .control-hint {
     font-size: 10px;
-    color: #475569;
+    color: var(--text-muted);
     margin: 4px 0 0;
   }
 
   .param-select {
     width: 100%;
-    background: #1e293b;
-    color: #e2e8f0;
-    border: 1px solid #334155;
+    background: var(--bg-panel);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-muted);
     border-radius: 6px;
     padding: 7px 10px;
     font-size: 12px;
@@ -470,7 +516,7 @@
   .toggle-label {
     font-size: 12px;
     font-weight: 500;
-    color: #e2e8f0;
+    color: var(--text-secondary);
   }
 
   /* Radio group */
@@ -487,7 +533,7 @@
     gap: 8px;
     cursor: pointer;
     font-size: 12px;
-    color: #94a3b8;
+    color: var(--text-label);
   }
 
   .radio-option input[type='radio'] {
