@@ -3,32 +3,42 @@ import { STLExporter } from 'three/addons/exporters/STLExporter.js';
 import { buildExportGeometry, buildIndependentSectionGeometries } from './geometry.js';
 import type { Params } from './schema.js';
 import { generateSVGPlan, generateCombinedSVGPlan } from './svg.js';
+import { calculateSections } from './sectioning.js';
 import JSZip from 'jszip';
 
 /**
- * Builds the merged geometry, exports it as a binary STL, and
- * triggers a browser download. All work is done client-side.
+ * Builds the merged geometry, exports it as a binary STL + SVG plan in a zip,
+ * and triggers a browser download.
  */
-export function exportSTL(params: Params): void {
+export async function exportSTL(params: Params): Promise<void> {
   const geometry = buildExportGeometry(params);
-
-  // STLExporter requires a Mesh (not a bare geometry)
   const mesh = new THREE.Mesh(geometry);
 
   const exporter = new STLExporter();
-  const buffer = exporter.parse(mesh, { binary: true }) as unknown as ArrayBuffer;
+  const stlDataView = exporter.parse(mesh, { binary: true }) as unknown as DataView;
+  const stlData = new Uint8Array(stlDataView.buffer, stlDataView.byteOffset, stlDataView.byteLength);
 
-  const blob = new Blob([buffer], { type: 'application/octet-stream' });
-  const url = URL.createObjectURL(blob);
+  geometry.dispose();
+
+  // Generate the SVG plan (single section = full grid)
+  const sections = calculateSections(params);
+  const svgContent = sections.length === 1
+    ? generateSVGPlan(sections[0], params)
+    : generateCombinedSVGPlan(params);
+
+  const zip = new JSZip();
+  zip.file('pole_frame.stl', stlData);
+  zip.file('pole_frame_plan.svg', svgContent);
+
+  const zipBlob = await zip.generateAsync({ type: 'blob' });
+  const url = URL.createObjectURL(zipBlob);
 
   const anchor = document.createElement('a');
   anchor.href = url;
-  anchor.download = `pole_frame_${Date.now()}.stl`;
+  anchor.download = `pole_frame_${Date.now()}.zip`;
   anchor.click();
 
-  // Clean up
   URL.revokeObjectURL(url);
-  geometry.dispose();
 }
 
 /**
@@ -57,28 +67,21 @@ export async function exportSplitAsZip(params: Params): Promise<void> {
         continue;
       }
 
-      // Export as binary STL
-      // STLExporter.parse() with binary:true returns a DataView (not an ArrayBuffer).
-      // We must read .buffer/.byteOffset/.byteLength to get the real bytes.
       const mesh = new THREE.Mesh(geometry);
       const stlDataView = exporter.parse(mesh, { binary: true }) as unknown as DataView;
 
-      // Verify buffer has data
       if (!stlDataView || stlDataView.byteLength === 0) {
         console.warn(`[stl] Section ${label} produced empty STL buffer`);
         geometry.dispose();
         continue;
       }
 
-      // Extract the underlying ArrayBuffer slice as Uint8Array for jszip
       const stlData = new Uint8Array(stlDataView.buffer, stlDataView.byteOffset, stlDataView.byteLength);
       zip.file(`${filePrefix}.stl`, stlData);
 
-      // Generate SVG plan
       const svgContent = generateSVGPlan(section, params);
       zip.file(`${filePrefix}_plan.svg`, svgContent);
 
-      // Clean up
       geometry.dispose();
     }
 
@@ -86,7 +89,6 @@ export async function exportSplitAsZip(params: Params): Promise<void> {
     const combinedSvg = generateCombinedSVGPlan(params);
     zip.file(`all_sections_plan.svg`, combinedSvg);
 
-    // Create and download zip
     const zipBlob = await zip.generateAsync({ type: 'blob' });
     const url = URL.createObjectURL(zipBlob);
 
@@ -95,7 +97,6 @@ export async function exportSplitAsZip(params: Params): Promise<void> {
     anchor.download = `pole_frame_split_${timestamp}.zip`;
     anchor.click();
 
-    // Clean up
     URL.revokeObjectURL(url);
   } catch (error) {
     console.error('[stl] Split export failed:', error);

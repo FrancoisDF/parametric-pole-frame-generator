@@ -1,5 +1,4 @@
 import { plateSizeX, plateSizeZ, type Params } from './schema.js';
-import { poleHeightFromWorld } from './heightFunctions.js';
 import { generatePolePositions } from './poleLayout.js';
 import { numSectionsX, numSectionsZ, calculateSections, type Section } from './sectioning.js';
 
@@ -8,15 +7,7 @@ import { numSectionsX, numSectionsZ, calculateSections, type Section } from './s
  * Shows pole positions as circles with 0.1mm offset for paper cutting.
  */
 export function generateSVGPlan(section: Section, params: Params): string {
-  const {
-    poleDiameter,
-    heightFunction,
-    waveFrequency,
-    minHeight,
-    maxHeight,
-    gridWidth,
-    gridHeight
-  } = params;
+  const { poleDiameter } = params;
 
   const nsX = numSectionsX(params);
   const nsZ = numSectionsZ(params);
@@ -24,8 +15,6 @@ export function generateSVGPlan(section: Section, params: Params): string {
   const offsetRadius = radius + 0.1; // 0.1mm offset for paper cutting
   const halfPlateX = plateSizeX(params) / 2;
   const halfPlateZ = plateSizeZ(params) / 2;
-  const halfX = gridWidth / 2;
-  const halfZ = gridHeight / 2;
 
   // Compute plate extent using the same logic as geometry.ts:
   // exterior edge → full plate boundary; interior edge → spatial split point
@@ -75,19 +64,9 @@ export function generateSVGPlan(section: Section, params: Params): string {
     const localX = x - plateXMin;
     const localZ = z - plateZMin;
 
-    const h = poleHeightFromWorld(x, z, halfX, halfZ, heightFunction, waveFrequency, minHeight, maxHeight);
-
     lines.push(
       `    <circle cx="${localX}" cy="${localZ}" r="${offsetRadius}" fill="none" stroke="#0066cc" stroke-width="0.3" />`
     );
-
-    const heightPercent = maxHeight > minHeight ? (h - minHeight) / (maxHeight - minHeight) : 0;
-    if (heightFunction !== 'flat' && heightPercent > 0) {
-      const opacity = 0.3 + heightPercent * 0.3;
-      lines.push(
-        `    <circle cx="${localX}" cy="${localZ}" r="${offsetRadius * 0.6}" fill="#0066cc" opacity="${opacity.toFixed(2)}" />`
-      );
-    }
   }
 
   lines.push(`  </g>`);
@@ -101,15 +80,7 @@ export function generateSVGPlan(section: Section, params: Params): string {
  * with 10mm (1cm) gaps between sections — ready to import into cutting software.
  */
 export function generateCombinedSVGPlan(params: Params): string {
-  const {
-    poleDiameter,
-    heightFunction,
-    waveFrequency,
-    minHeight,
-    maxHeight,
-    gridWidth,
-    gridHeight
-  } = params;
+  const { poleDiameter } = params;
 
   const nsX = numSectionsX(params);
   const nsZ = numSectionsZ(params);
@@ -118,8 +89,6 @@ export function generateCombinedSVGPlan(params: Params): string {
   const offsetRadius = radius + 0.1;
   const halfPlateX = plateSizeX(params) / 2;
   const halfPlateZ = plateSizeZ(params) / 2;
-  const halfX = gridWidth / 2;
-  const halfZ = gridHeight / 2;
   const gap = 10; // 1cm gap between sections
   const padding = 10;
 
@@ -206,19 +175,9 @@ export function generateCombinedSVGPlan(params: Params): string {
     for (const { x, z } of sectionPositions) {
       const localX = x - plateXMin;
       const localZ = z - plateZMin;
-      const h = poleHeightFromWorld(x, z, halfX, halfZ, heightFunction, waveFrequency, minHeight, maxHeight);
-
       lines.push(
         `      <circle cx="${localX}" cy="${localZ}" r="${offsetRadius}" fill="none" stroke="#0066cc" stroke-width="0.3" />`
       );
-
-      const heightPercent = maxHeight > minHeight ? (h - minHeight) / (maxHeight - minHeight) : 0;
-      if (heightFunction !== 'flat' && heightPercent > 0) {
-        const opacity = 0.3 + heightPercent * 0.3;
-        lines.push(
-          `      <circle cx="${localX}" cy="${localZ}" r="${offsetRadius * 0.6}" fill="#0066cc" opacity="${opacity.toFixed(2)}" />`
-        );
-      }
     }
 
     lines.push(`    </g>`);
