@@ -1,10 +1,11 @@
 <script lang="ts">
   import { exportProjectAsJSON, downloadProjectFile, importProjectFromFile } from '$lib/projectManager';
+  import { theme } from '$lib/theme.svelte';
   import type { Params } from '$lib/schema';
-  import { defaultParams } from '$lib/schema';
 
   let { params }: { params: Params } = $props();
 
+  let isMenuOpen = $state(false);
   let showExportDialog = $state(false);
   let showImportConfirm = $state(false);
   let projectName = $state('My Project');
@@ -16,7 +17,16 @@
   let pendingImportParams = $state<Params | null>(null);
   let fileInputRef: HTMLInputElement | null = $state(null);
 
+  function toggleMenu() {
+    isMenuOpen = !isMenuOpen;
+  }
+
+  function closeMenu() {
+    isMenuOpen = false;
+  }
+
   function openExportDialog() {
+    closeMenu();
     error = null;
     showExportDialog = true;
   }
@@ -49,6 +59,7 @@
   }
 
   function triggerFileInput() {
+    closeMenu();
     fileInputRef?.click();
   }
 
@@ -69,14 +80,12 @@
       error = e instanceof Error ? e.message : 'Import failed';
     } finally {
       importing = false;
-      // Reset file input
       input.value = '';
     }
   }
 
   function confirmImport() {
     if (pendingImportParams) {
-      // Update params with imported data
       Object.assign(params, pendingImportParams);
       showImportConfirm = false;
       importedMetadata = null;
@@ -89,31 +98,136 @@
     importedMetadata = null;
     pendingImportParams = null;
   }
+
+  function toggleTheme() {
+    theme.toggle();
+  }
 </script>
 
-<div class="import-export-area">
-  {#if error && !showExportDialog && !showImportConfirm}
-    <p class="error-message">{error}</p>
-  {/if}
+<div class="project-menu-container">
+  <button
+    class="menu-trigger-btn"
+    onclick={toggleMenu}
+    title="Open menu"
+    aria-label="Open menu"
+    aria-expanded={isMenuOpen}
+  >
+    <!-- Hamburger icon -->
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <line x1="4" y1="6" x2="20" y2="6" />
+      <line x1="4" y1="12" x2="20" y2="12" />
+      <line x1="4" y1="18" x2="20" y2="18" />
+    </svg>
+  </button>
 
-  <div class="button-group">
-    <button
-      class="action-btn save-btn"
-      onclick={openExportDialog}
-      disabled={exporting}
-      title="Save current project as JSON file"
-    >
-      Save Project
-    </button>
-    <button
-      class="action-btn load-btn"
-      onclick={triggerFileInput}
-      disabled={importing}
-      title="Load a previously saved project"
-    >
-      Load Project
-    </button>
-  </div>
+  {#if isMenuOpen}
+    <div class="menu-backdrop" onclick={closeMenu} role="presentation"></div>
+    <div class="menu-dropdown" role="menu">
+      <button
+        class="menu-item save-item"
+        onclick={openExportDialog}
+        disabled={exporting}
+        role="menuitem"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+          <polyline points="17 21 17 13 7 13 7 21" />
+          <polyline points="7 3 7 8 15 8" />
+        </svg>
+        Save Project
+      </button>
+
+      <button
+        class="menu-item load-item"
+        onclick={triggerFileInput}
+        disabled={importing}
+        role="menuitem"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="7 10 12 15 17 10" />
+          <line x1="12" y1="15" x2="12" y2="3" />
+        </svg>
+        Load Project
+      </button>
+
+      <div class="menu-divider"></div>
+
+      <button
+        class="menu-item theme-item"
+        onclick={toggleTheme}
+        role="menuitem"
+      >
+        {#if theme.current === 'dark'}
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="12" r="4" />
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+          </svg>
+          Light Mode
+        {:else}
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+          </svg>
+          Dark Mode
+        {/if}
+      </button>
+    </div>
+  {/if}
 
   <input
     bind:this={fileInputRef}
@@ -230,58 +344,85 @@
 </div>
 
 <style>
-  .import-export-area {
-    padding: 12px 16px;
+  .project-menu-container {
+    position: relative;
   }
 
-  .button-group {
-    display: flex;
-    gap: 8px;
-    width: 100%;
-  }
-
-  .action-btn {
-    flex: 1;
-    padding: 8px 12px;
+  .menu-trigger-btn {
+    background: none;
     border: none;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 600;
     cursor: pointer;
-    transition: background 0.15s ease, opacity 0.15s;
+    color: var(--text-muted);
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    border-radius: 4px;
+    transition: color 0.15s, background 0.15s;
+    flex-shrink: 0;
+  }
+
+  .menu-trigger-btn:hover {
+    color: var(--text-label);
+    background: var(--bg-panel);
+  }
+
+  .menu-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 50;
+  }
+
+  .menu-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 4px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-muted);
+    border-radius: 6px;
+    padding: 6px 0;
+    min-width: 180px;
+    z-index: 51;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 12px;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
     outline: none;
   }
 
-  .save-btn {
-    background: #10b981;
-    color: #fff;
+  .menu-item:hover:not(:disabled) {
+    background: var(--bg-panel);
+    color: var(--text-primary);
   }
 
-  .save-btn:hover:not(:disabled) {
-    background: #059669;
-  }
-
-  .load-btn {
-    background: #8b5cf6;
-    color: #fff;
-  }
-
-  .load-btn:hover:not(:disabled) {
-    background: #7c3aed;
-  }
-
-  .action-btn:disabled {
-    opacity: 0.6;
+  .menu-item:disabled {
+    opacity: 0.5;
     cursor: not-allowed;
   }
 
-  .error-message {
-    font-size: 11px;
-    color: #f87171;
-    margin: 0 0 8px;
-    padding: 6px 10px;
-    background: rgba(248, 113, 113, 0.1);
-    border-radius: 6px;
+  .save-item::before {
+    content: '';
+  }
+
+  .menu-divider {
+    height: 1px;
+    background: var(--border-subtle);
+    margin: 6px 0;
   }
 
   /* Modal styles */
