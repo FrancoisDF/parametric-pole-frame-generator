@@ -3,6 +3,7 @@
   import { numSectionsX, numSectionsZ, sectionPhysicalSizeX, sectionPhysicalSizeZ } from '$lib/sectioning';
   import { generatePolePositions } from '$lib/poleLayout';
   import { theme } from '$lib/theme.svelte';
+  import ImportExportPanel from './ImportExportPanel.svelte';
 
   let { params }: { params: Params } = $props();
 
@@ -30,6 +31,7 @@
 
 <div class="param-panel">
   <header class="panel-header">
+    <ImportExportPanel {params} />
     <div class="panel-header-top">
       <h1 class="panel-title">Pole Frame Generator</h1>
       <button
