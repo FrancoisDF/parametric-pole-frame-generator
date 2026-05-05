@@ -420,10 +420,6 @@
     cursor: not-allowed;
   }
 
-  .save-item::before {
-    content: '';
-  }
-
   .menu-divider {
     height: 1px;
     background: var(--border-subtle);
