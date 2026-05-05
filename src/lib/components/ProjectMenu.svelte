@@ -393,9 +393,11 @@
   .menu-item {
     display: flex;
     align-items: center;
+    justify-content: flex-start;
     gap: 10px;
     width: 100%;
-    padding: 10px 12px;
+    height: 36px;
+    padding: 0 12px;
     background: none;
     border: none;
     color: var(--text-secondary);
@@ -404,6 +406,8 @@
     cursor: pointer;
     transition: background 0.15s, color 0.15s;
     outline: none;
+    text-align: left;
+    white-space: nowrap;
   }
 
   .menu-item:hover:not(:disabled) {
