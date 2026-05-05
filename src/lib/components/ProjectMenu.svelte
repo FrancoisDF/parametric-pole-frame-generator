@@ -346,6 +346,8 @@
 <style>
   .project-menu-container {
     position: relative;
+    display: flex;
+    flex-shrink: 0;
   }
 
   .menu-trigger-btn {
@@ -377,14 +379,13 @@
 
   .menu-dropdown {
     position: absolute;
-    top: 100%;
-    right: 0;
-    margin-top: 4px;
+    top: calc(100% + 8px);
+    right: -8px;
     background: var(--bg-primary);
     border: 1px solid var(--border-muted);
     border-radius: 6px;
     padding: 6px 0;
-    min-width: 180px;
+    min-width: 200px;
     z-index: 51;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
