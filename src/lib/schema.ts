@@ -1,8 +1,9 @@
 import { z } from 'zod';
 
 export const paramsSchema = z.object({
-  // Grid — gridSize is the physical side length of the pole grid in mm
-  gridSize: z.number().min(10).max(2000).default(490),
+  // Grid dimensions in mm (width = X axis, height = Z axis)
+  gridWidth: z.number().min(10).max(2000).default(490),
+  gridHeight: z.number().min(10).max(2000).default(490),
   spacing: z.number().min(1).max(200).default(10),
   poleLayout: z.enum(['grid', 'random', 'circular', 'spiral']).default('grid'),
   layoutSeed: z.number().min(0).max(9999).default(42),
@@ -39,15 +40,22 @@ export type Params = z.infer<typeof paramsSchema>;
 
 export const defaultParams: Params = paramsSchema.parse({});
 
-/**
- * Number of poles per side, derived from physical grid size and spacing.
- * Changing spacing keeps gridSize fixed and only changes pole count.
- */
-export function poleCount(p: Params): number {
-  return Math.max(1, Math.floor(p.gridSize / p.spacing) + 1);
+/** Number of poles along the X axis (grid width direction). */
+export function poleCountX(p: Params): number {
+  return Math.max(1, Math.floor(p.gridWidth / p.spacing) + 1);
 }
 
-/** Computes base plate side length (mm) from current params. */
-export function plateSize(p: Params): number {
-  return p.gridSize + p.poleDiameter + 2 * p.baseMargin;
+/** Number of poles along the Z axis (grid depth direction). */
+export function poleCountZ(p: Params): number {
+  return Math.max(1, Math.floor(p.gridHeight / p.spacing) + 1);
+}
+
+/** Base plate width in mm (X axis). */
+export function plateSizeX(p: Params): number {
+  return p.gridWidth + p.poleDiameter + 2 * p.baseMargin;
+}
+
+/** Base plate depth in mm (Z axis). */
+export function plateSizeZ(p: Params): number {
+  return p.gridHeight + p.poleDiameter + 2 * p.baseMargin;
 }

@@ -35,7 +35,7 @@
   }
 
   function buildInstances() {
-    const { poleDiameter, minHeight, maxHeight, baseHeight, heightFunction, waveFrequency, gridSize, customHeights } =
+    const { poleDiameter, minHeight, maxHeight, baseHeight, heightFunction, waveFrequency, gridWidth, gridHeight, customHeights } =
       params;
 
     disposeCurrent();
@@ -43,7 +43,8 @@
     const positions = generatePolePositions(params);
     const count = positions.length;
     const radius = poleDiameter / 2;
-    const half = gridSize / 2;
+    const halfX = gridWidth / 2;
+    const halfZ = gridHeight / 2;
 
     // Unit-height cylinder (height=1 centred at origin); we scale Y per instance
     activeGeo = new THREE.CylinderGeometry(radius, radius, 1, 8, 1);
@@ -55,7 +56,7 @@
 
     for (let idx = 0; idx < positions.length; idx++) {
       const { x, z } = positions[idx];
-      const h = effectivePoleHeight(x, z, half, heightFunction, waveFrequency, minHeight, maxHeight, customHeights);
+      const h = effectivePoleHeight(x, z, halfX, halfZ, heightFunction, waveFrequency, minHeight, maxHeight, customHeights);
       const y = baseHeight + h / 2; // centre of the scaled cylinder
 
       dummy.position.set(x, y, z);
@@ -72,7 +73,8 @@
   $effect(() => {
     // Access every tracked param to establish reactive dependencies
     const _ = [
-      params.gridSize,
+      params.gridWidth,
+      params.gridHeight,
       params.spacing,
       params.poleDiameter,
       params.minHeight,

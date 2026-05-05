@@ -19,7 +19,7 @@
   } = $props();
 
   // Snapshot initial values so the camera position doesn't jump when params change.
-  const initialDistance = untrack(() => Math.max(80, params.gridSize * 1.6 + params.maxHeight));
+  const initialDistance = untrack(() => Math.max(80, Math.max(params.gridWidth, params.gridHeight) * 1.6 + params.maxHeight));
 
   // ── Sculpt state ──────────────────────────────────────────────────────────
   let isSculpting = $state(false);
@@ -74,8 +74,9 @@
   }
 
   function applyBrush(worldX: number, worldZ: number, heightDelta: number) {
-    const { brushRadius, brushStrength, gridSize, heightFunction, waveFrequency, minHeight, maxHeight } = params;
-    const half = gridSize / 2;
+    const { brushRadius, brushStrength, gridWidth, gridHeight, heightFunction, waveFrequency, minHeight, maxHeight } = params;
+    const halfX = gridWidth / 2;
+    const halfZ = gridHeight / 2;
     const positions = generatePolePositions(params);
     const newHeights = { ...params.customHeights };
 
@@ -84,7 +85,7 @@
       if (dist >= brushRadius) continue;
       const weight = Math.exp(-3 * (dist / brushRadius) ** 2);
       const key = polePositionKey(x, z);
-      const current = effectivePoleHeight(x, z, half, heightFunction, waveFrequency, minHeight, maxHeight, newHeights);
+      const current = effectivePoleHeight(x, z, halfX, halfZ, heightFunction, waveFrequency, minHeight, maxHeight, newHeights);
       const next = Math.max(minHeight, Math.min(maxHeight, current + heightDelta * weight * brushStrength));
       newHeights[key] = next;
     }
@@ -150,7 +151,7 @@
         brushVisible = true;
         const dy = lastMouseY - e.clientY; // positive = drag up = raise
         lastMouseY = e.clientY;
-        const delta = dy * (params.gridSize / 5000);
+        const delta = dy * (Math.max(params.gridWidth, params.gridHeight) / 5000);
         if (Math.abs(delta) > 0.0001) {
           applyBrush(paintAnchorX, paintAnchorZ, delta);
         }

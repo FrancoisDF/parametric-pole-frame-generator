@@ -1,4 +1,4 @@
-import { poleCount, plateSize, type Params } from './schema.js';
+import { poleCountX, poleCountZ, plateSizeX, plateSizeZ, type Params } from './schema.js';
 
 export interface Section {
   rowIdx: number; // 0-based row index (label row = rowIdx + 1)
@@ -10,14 +10,26 @@ export interface Section {
 }
 
 /**
- * Returns how many sections per side will be created.
+ * Returns how many sections along the X axis will be created.
  */
-export function numSectionsPerSide(params: Params): number {
+export function numSectionsX(params: Params): number {
   if (!params.splitEnabled) return 1;
 
   if (params.splitMode === 'printer') {
-    const physical = plateSize(params);
-    return Math.max(1, Math.ceil(physical / params.printerSize));
+    return Math.max(1, Math.ceil(plateSizeX(params) / params.printerSize));
+  }
+
+  return Math.max(1, params.splitGridCount);
+}
+
+/**
+ * Returns how many sections along the Z axis will be created.
+ */
+export function numSectionsZ(params: Params): number {
+  if (!params.splitEnabled) return 1;
+
+  if (params.splitMode === 'printer') {
+    return Math.max(1, Math.ceil(plateSizeZ(params) / params.printerSize));
   }
 
   return Math.max(1, params.splitGridCount);
@@ -28,15 +40,13 @@ export function numSectionsPerSide(params: Params): number {
  * consecutive poles at the section seams (grid-equivalent spacing).
  * This ensures seam plates join flush regardless of the pole layout mode.
  */
-function computeSplitPoints(params: Params, ns: number): number[] {
-  const n = poleCount(params);
-  const { spacing } = params;
-  const polesPerSection = Math.ceil(n / ns);
+function computeSplitPoints(nPoles: number, ns: number, spacing: number): number[] {
+  const polesPerSection = Math.ceil(nPoles / ns);
   const splits: number[] = [];
 
   for (let k = 1; k < ns; k++) {
-    const iMax = Math.min(k * polesPerSection - 1, n - 1);
-    const worldCoord = (iMax - (n - 1) / 2) * spacing + spacing / 2;
+    const iMax = Math.min(k * polesPerSection - 1, nPoles - 1);
+    const worldCoord = (iMax - (nPoles - 1) / 2) * spacing + spacing / 2;
     splits.push(worldCoord);
   }
 
@@ -49,18 +59,21 @@ function computeSplitPoints(params: Params, ns: number): number[] {
  * plate-edge computation in geometry building.
  */
 export function calculateSections(params: Params): Section[] {
-  const ns = numSectionsPerSide(params);
-  const half = params.gridSize / 2;
+  const nsX = numSectionsX(params);
+  const nsZ = numSectionsZ(params);
+  const halfX = params.gridWidth / 2;
+  const halfZ = params.gridHeight / 2;
 
-  // Build split-point arrays including the outer boundaries
-  const innerSplits = computeSplitPoints(params, ns);
-  const xSplits = [-half, ...innerSplits, half];
-  const zSplits = [-half, ...innerSplits, half];
+  const innerSplitsX = computeSplitPoints(poleCountX(params), nsX, params.spacing);
+  const innerSplitsZ = computeSplitPoints(poleCountZ(params), nsZ, params.spacing);
+
+  const xSplits = [-halfX, ...innerSplitsX, halfX];
+  const zSplits = [-halfZ, ...innerSplitsZ, halfZ];
 
   const sections: Section[] = [];
 
-  for (let sRow = 0; sRow < ns; sRow++) {
-    for (let sCol = 0; sCol < ns; sCol++) {
+  for (let sRow = 0; sRow < nsZ; sRow++) {
+    for (let sCol = 0; sCol < nsX; sCol++) {
       sections.push({
         rowIdx: sRow,
         colIdx: sCol,
@@ -83,9 +96,15 @@ export function sectionLabel(section: Section): string {
 }
 
 /**
- * Estimated physical width of a section's base plate in mm.
+ * Estimated physical width of a section's base plate in mm (X axis).
  */
-export function sectionPhysicalSize(params: Params): number {
-  const ns = numSectionsPerSide(params);
-  return plateSize(params) / ns;
+export function sectionPhysicalSizeX(params: Params): number {
+  return plateSizeX(params) / numSectionsX(params);
+}
+
+/**
+ * Estimated physical depth of a section's base plate in mm (Z axis).
+ */
+export function sectionPhysicalSizeZ(params: Params): number {
+  return plateSizeZ(params) / numSectionsZ(params);
 }

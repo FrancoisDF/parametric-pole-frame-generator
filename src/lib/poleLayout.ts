@@ -1,5 +1,5 @@
 import type { Params } from './schema.js';
-import { poleCount } from './schema.js';
+import { poleCountX, poleCountZ } from './schema.js';
 
 export interface PolePosition {
   x: number;
@@ -20,14 +20,15 @@ function makeLCG(seed: number): () => number {
 // ── Layout algorithms ────────────────────────────────────────────────────────
 
 function gridLayout(params: Params): PolePosition[] {
-  const n = poleCount(params);
+  const nX = poleCountX(params);
+  const nZ = poleCountZ(params);
   const { spacing } = params;
   const positions: PolePosition[] = [];
-  for (let j = 0; j < n; j++) {
-    for (let i = 0; i < n; i++) {
+  for (let j = 0; j < nZ; j++) {
+    for (let i = 0; i < nX; i++) {
       positions.push({
-        x: (i - (n - 1) / 2) * spacing,
-        z: (j - (n - 1) / 2) * spacing
+        x: (i - (nX - 1) / 2) * spacing,
+        z: (j - (nZ - 1) / 2) * spacing
       });
     }
   }
@@ -35,10 +36,12 @@ function gridLayout(params: Params): PolePosition[] {
 }
 
 function randomLayout(params: Params): PolePosition[] {
-  const n = poleCount(params);
-  const target = n * n;
-  const { spacing, gridSize, layoutSeed } = params;
-  const half = gridSize / 2;
+  const nX = poleCountX(params);
+  const nZ = poleCountZ(params);
+  const target = nX * nZ;
+  const { spacing, gridWidth, gridHeight, layoutSeed } = params;
+  const halfX = gridWidth / 2;
+  const halfZ = gridHeight / 2;
   const minDist = Math.max(1, spacing - 3);
   const minDist2 = minDist * minDist;
   const rand = makeLCG(layoutSeed);
@@ -46,8 +49,8 @@ function randomLayout(params: Params): PolePosition[] {
   const maxAttempts = target * 50;
 
   for (let a = 0; a < maxAttempts && positions.length < target; a++) {
-    const x = (rand() * 2 - 1) * half;
-    const z = (rand() * 2 - 1) * half;
+    const x = (rand() * 2 - 1) * halfX;
+    const z = (rand() * 2 - 1) * halfZ;
 
     let ok = true;
     for (const p of positions) {
@@ -65,16 +68,17 @@ function randomLayout(params: Params): PolePosition[] {
 }
 
 function circularLayout(params: Params): PolePosition[] {
-  const { spacing, gridSize } = params;
-  const half = gridSize / 2;
+  const { spacing, gridWidth, gridHeight } = params;
+  const halfX = gridWidth / 2;
+  const halfZ = gridHeight / 2;
   const positions: PolePosition[] = [];
 
   // Center pole
   positions.push({ x: 0, z: 0 });
 
-  // Continue rings until the radius reaches the corner of the square (half * √2),
-  // but only keep poles that fall within the square bounds.
-  const corner = half * Math.SQRT2;
+  // Continue rings until the radius reaches the corner of the rectangle,
+  // but only keep poles that fall within the rectangular bounds.
+  const corner = Math.sqrt(halfX * halfX + halfZ * halfZ);
   let k = 1;
   while (true) {
     const r = k * spacing;
@@ -84,7 +88,7 @@ function circularLayout(params: Params): PolePosition[] {
       const angle = (m / count) * 2 * Math.PI;
       const x = r * Math.cos(angle);
       const z = r * Math.sin(angle);
-      if (Math.abs(x) <= half && Math.abs(z) <= half) {
+      if (Math.abs(x) <= halfX && Math.abs(z) <= halfZ) {
         positions.push({ x, z });
       }
     }
@@ -95,8 +99,9 @@ function circularLayout(params: Params): PolePosition[] {
 }
 
 function spiralLayout(params: Params): PolePosition[] {
-  const { spacing, gridSize } = params;
-  const half = gridSize / 2;
+  const { spacing, gridWidth, gridHeight } = params;
+  const halfX = gridWidth / 2;
+  const halfZ = gridHeight / 2;
   const positions: PolePosition[] = [];
 
   // Archimedean spiral: r(θ) = a·θ, where a = spacing / (2π)
@@ -111,9 +116,9 @@ function spiralLayout(params: Params): PolePosition[] {
   let theta = dTheta;
   let arcSinceLastPole = 0;
 
-  // Continue until the spiral reaches the corner of the square (half * √2),
-  // but only keep poles that fall within the square bounds.
-  const corner = half * Math.SQRT2;
+  // Continue until the spiral reaches the corner of the rectangle,
+  // but only keep poles that fall within the rectangular bounds.
+  const corner = Math.sqrt(halfX * halfX + halfZ * halfZ);
   while (true) {
     const r = a * theta;
     if (r > corner) break;
@@ -126,7 +131,7 @@ function spiralLayout(params: Params): PolePosition[] {
       arcSinceLastPole -= spacing;
       const x = r * Math.cos(theta);
       const z = r * Math.sin(theta);
-      if (Math.abs(x) <= half && Math.abs(z) <= half) {
+      if (Math.abs(x) <= halfX && Math.abs(z) <= halfZ) {
         positions.push({ x, z });
       }
     }

@@ -1,2 +1,1 @@
-export { plateSize } from './schema.js';
-export { poleHeight } from './heightFunctions.js';
+export { plateSizeX, plateSizeZ } from './schema.js';
