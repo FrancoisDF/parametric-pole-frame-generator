@@ -1,12 +1,13 @@
 <script lang="ts">
-  import { poleCount, plateSize, type Params } from '$lib/schema';
-  import { numSectionsPerSide, sectionPhysicalSize } from '$lib/sectioning';
+  import { poleCountX, poleCountZ, plateSizeX, plateSizeZ, type Params } from '$lib/schema';
+  import { numSectionsX, numSectionsZ, sectionPhysicalSizeX, sectionPhysicalSizeZ } from '$lib/sectioning';
   import { generatePolePositions } from '$lib/poleLayout';
   import { theme } from '$lib/theme.svelte';
 
   let { params }: { params: Params } = $props();
 
-  const n = $derived(poleCount(params));
+  const nX = $derived(poleCountX(params));
+  const nZ = $derived(poleCountZ(params));
   const actualPoleCount = $derived(generatePolePositions(params).length);
 
   // Guards: keep minHeight ≤ maxHeight
@@ -18,10 +19,13 @@
   }
 
   // Split preview calculations
-  const ns = $derived(numSectionsPerSide(params));
-  const sectionSize = $derived(sectionPhysicalSize(params));
-  const totalSections = $derived(ns * ns);
-  const fullPlateSize = $derived(plateSize(params));
+  const nsX = $derived(numSectionsX(params));
+  const nsZ = $derived(numSectionsZ(params));
+  const sectionSizeX = $derived(sectionPhysicalSizeX(params));
+  const sectionSizeZ = $derived(sectionPhysicalSizeZ(params));
+  const totalSections = $derived(nsX * nsZ);
+  const fullPlateSizeX = $derived(plateSizeX(params));
+  const fullPlateSizeZ = $derived(plateSizeZ(params));
 </script>
 
 <div class="param-panel">
@@ -58,16 +62,31 @@
 
       <div class="control-group">
         <div class="control-label-row">
-          <label class="control-label" for="gridSize">Grid Size</label>
-          <span class="control-value">{params.gridSize} mm</span>
+          <label class="control-label" for="gridWidth">Width (X)</label>
+          <span class="control-value">{params.gridWidth} mm</span>
         </div>
         <input
-          id="gridSize"
+          id="gridWidth"
           type="range"
           min="10"
           max="2000"
           step="10"
-          bind:value={params.gridSize}
+          bind:value={params.gridWidth}
+        />
+      </div>
+
+      <div class="control-group">
+        <div class="control-label-row">
+          <label class="control-label" for="gridHeight">Depth (Y)</label>
+          <span class="control-value">{params.gridHeight} mm</span>
+        </div>
+        <input
+          id="gridHeight"
+          type="range"
+          min="10"
+          max="2000"
+          step="10"
+          bind:value={params.gridHeight}
         />
       </div>
 
@@ -116,9 +135,9 @@
 
       <p class="control-hint">
         {#if params.poleLayout === 'grid'}
-          Total poles: {n} × {n} = {n * n}
+          Total poles: {nX} × {nZ} = {nX * nZ}
         {:else}
-          Poles: {actualPoleCount} (~{n * n} for grid equivalent)
+          Poles: {actualPoleCount} (~{nX * nZ} for grid equivalent)
         {/if}
       </p>
     </section>
@@ -209,7 +228,7 @@
         />
       </div>
 
-      <p class="control-hint">Plate size: {fullPlateSize.toFixed(1)} × {fullPlateSize.toFixed(1)} mm</p>
+      <p class="control-hint">Plate size: {fullPlateSizeX.toFixed(1)} × {fullPlateSizeZ.toFixed(1)} mm</p>
     </section>
 
     <!-- ── HEIGHT FUNCTION ── -->
@@ -320,7 +339,7 @@
               bind:value={params.splitGridCount}
             />
             <p class="control-hint">
-              Result: {ns} × {ns} = {totalSections} sections · ~{sectionSize.toFixed(0)} mm each
+              Result: {nsX} × {nsZ} = {totalSections} sections · ~{sectionSizeX.toFixed(0)} × {sectionSizeZ.toFixed(0)} mm each
             </p>
           </div>
         {:else}
@@ -338,7 +357,7 @@
               bind:value={params.printerSize}
             />
             <p class="control-hint">
-              Model is {fullPlateSize.toFixed(0)} mm → {ns} × {ns} = {totalSections} sections
+              Model is {fullPlateSizeX.toFixed(0)} × {fullPlateSizeZ.toFixed(0)} mm → {nsX} × {nsZ} = {totalSections} sections
             </p>
           </div>
         {/if}

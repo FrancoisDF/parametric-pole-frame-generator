@@ -63,19 +63,20 @@ export function mapToHeight(t: number, minHeight: number, maxHeight: number): nu
 
 /**
  * Computes the actual pole height in mm for a world-space position (x, z).
- * Normalises to [-1, 1] using halfGridSize, clamps, then delegates to getHeightT.
+ * Normalises x to [-1, 1] using halfX and z using halfZ, then delegates to getHeightT.
  */
 export function poleHeightFromWorld(
   x: number,
   z: number,
-  halfGridSize: number,
+  halfX: number,
+  halfZ: number,
   heightFunction: string,
   waveFrequency: number,
   minHeight: number,
   maxHeight: number
 ): number {
-  const nx = halfGridSize > 0 ? Math.max(-1, Math.min(1, x / halfGridSize)) : 0;
-  const ny = halfGridSize > 0 ? Math.max(-1, Math.min(1, z / halfGridSize)) : 0;
+  const nx = halfX > 0 ? Math.max(-1, Math.min(1, x / halfX)) : 0;
+  const ny = halfZ > 0 ? Math.max(-1, Math.min(1, z / halfZ)) : 0;
   const t = getHeightT(nx, ny, heightFunction, waveFrequency);
   return Math.max(0.01, mapToHeight(t, minHeight, maxHeight));
 }
@@ -95,7 +96,8 @@ export function polePositionKey(x: number, z: number): string {
 export function effectivePoleHeight(
   x: number,
   z: number,
-  halfGridSize: number,
+  halfX: number,
+  halfZ: number,
   heightFunction: string,
   waveFrequency: number,
   minHeight: number,
@@ -104,24 +106,5 @@ export function effectivePoleHeight(
 ): number {
   const key = polePositionKey(x, z);
   if (customHeights[key] != null) return Math.max(minHeight, Math.min(maxHeight, customHeights[key]));
-  return poleHeightFromWorld(x, z, halfGridSize, heightFunction, waveFrequency, minHeight, maxHeight);
-}
-
-/**
- * Convenience: computes the actual pole height in mm for grid position (i, j)
- * given the full params object.
- */
-export function poleHeight(
-  i: number,
-  j: number,
-  gridSize: number,
-  heightFunction: string,
-  waveFrequency: number,
-  minHeight: number,
-  maxHeight: number
-): number {
-  const nx = gridSize > 1 ? (i / (gridSize - 1)) * 2 - 1 : 0;
-  const ny = gridSize > 1 ? (j / (gridSize - 1)) * 2 - 1 : 0;
-  const t = getHeightT(nx, ny, heightFunction, waveFrequency);
-  return Math.max(0.01, mapToHeight(t, minHeight, maxHeight));
+  return poleHeightFromWorld(x, z, halfX, halfZ, heightFunction, waveFrequency, minHeight, maxHeight);
 }

@@ -39,17 +39,19 @@
   function remapSculpt(
     oldPositions: Array<{ x: number; z: number }>,
     oldHeights: Record<string, number>,
-    oldHalf: number,
+    oldHalfX: number,
+    oldHalfZ: number,
     newPositions: Array<{ x: number; z: number }>,
-    newHalf: number,
+    newHalfX: number,
+    newHalfZ: number,
     minH: number,
     maxH: number
   ): Record<string, number> {
     const sculpted = oldPositions
       .filter(({ x, z }) => oldHeights[polePositionKey(x, z)] != null)
       .map(({ x, z }) => ({
-        nx: oldHalf > 0 ? x / oldHalf : 0,
-        nz: oldHalf > 0 ? z / oldHalf : 0,
+        nx: oldHalfX > 0 ? x / oldHalfX : 0,
+        nz: oldHalfZ > 0 ? z / oldHalfZ : 0,
         h: oldHeights[polePositionKey(x, z)]
       }));
 
@@ -59,8 +61,8 @@
     const radius = 0.6; // search radius in normalized [-1, 1] space
 
     for (const { x, z } of newPositions) {
-      const nx = newHalf > 0 ? x / newHalf : 0;
-      const nz = newHalf > 0 ? z / newHalf : 0;
+      const nx = newHalfX > 0 ? x / newHalfX : 0;
+      const nz = newHalfZ > 0 ? z / newHalfZ : 0;
 
       let totalW = 0;
       let weightedH = 0;
@@ -86,7 +88,8 @@
   // Plain variables (not $state) — Effects read/write these but don't subscribe to them.
   let snapPositions: Array<{ x: number; z: number }> = [];
   let snapHeights: Record<string, number> = {};
-  let snapHalf = params.gridSize / 2;
+  let snapHalfX = params.gridWidth / 2;
+  let snapHalfZ = params.gridHeight / 2;
   let prevLayoutKey = '';
 
   // Effect A: whenever the sculpt changes, refresh the position/height snapshot.
@@ -95,24 +98,28 @@
     snapHeights = params.customHeights; // subscribe to sculpt changes
     untrack(() => {
       snapPositions = generatePolePositions(params);
-      snapHalf = params.gridSize / 2;
+      snapHalfX = params.gridWidth / 2;
+      snapHalfZ = params.gridHeight / 2;
     });
   });
 
   // Effect B: whenever the layout changes, remap the sculpt onto the new pole positions.
   // Reads layout params (via the key) reactively; reads snapHeights as a plain variable.
   $effect(() => {
-    const key = `${params.gridSize}|${params.spacing}|${params.poleLayout}|${params.layoutSeed}`;
+    const key = `${params.gridWidth}|${params.gridHeight}|${params.spacing}|${params.poleLayout}|${params.layoutSeed}`;
     if (key !== prevLayoutKey && prevLayoutKey !== '') {
       if (Object.keys(snapHeights).length > 0) {
         const newPositions = untrack(() => generatePolePositions(params));
-        const newHalf = params.gridSize / 2;
+        const newHalfX = params.gridWidth / 2;
+        const newHalfZ = params.gridHeight / 2;
         const remapped = remapSculpt(
           snapPositions,
           snapHeights,
-          snapHalf,
+          snapHalfX,
+          snapHalfZ,
           newPositions,
-          newHalf,
+          newHalfX,
+          newHalfZ,
           params.minHeight,
           params.maxHeight
         );
