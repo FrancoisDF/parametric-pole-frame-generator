@@ -21,7 +21,7 @@ export function generateSVGPlan(section: Section, params: Params): string {
   const nsX = numSectionsX(params);
   const nsZ = numSectionsZ(params);
   const radius = poleDiameter / 2;
-  const offsetRadius = radius + 0.2; // 0.2mm offset for physical pole fit
+  const offsetRadius = radius + 0.4; // 0.4mm offset for physical pole fit
   const halfPlateX = plateSizeX(params) / 2;
   const halfPlateZ = plateSizeZ(params) / 2;
 
@@ -98,7 +98,7 @@ export function generateCombinedSVGPlan(params: Params): string {
   const nsZ = numSectionsZ(params);
   const sections = calculateSections(params);
   const radius = poleDiameter / 2;
-  const offsetRadius = radius + 0.2; // 0.2mm offset for physical pole fit
+  const offsetRadius = radius + 0.4; // 0.4mm offset for physical pole fit
   const halfPlateX = plateSizeX(params) / 2;
   const halfPlateZ = plateSizeZ(params) / 2;
   const gap = 10; // mm — 1cm gap between sections
