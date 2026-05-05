@@ -2,6 +2,15 @@ import { plateSizeX, plateSizeZ, type Params } from './schema.js';
 import { generatePolePositions } from './poleLayout.js';
 import { numSectionsX, numSectionsZ, calculateSections, type Section } from './sectioning.js';
 
+// CSS standard: 96 px per inch, 25.4 mm per inch → 1mm = 96/25.4 px
+// Cricut Design Space (and most cutting software) treats raw SVG user-units as CSS pixels.
+// By working in px internally and declaring width/height in mm, the physical size is correct.
+const MM_TO_PX = 96 / 25.4;
+
+function px(mm: number): number {
+  return Math.round(mm * MM_TO_PX * 1000) / 1000;
+}
+
 /**
  * Generates an SVG plan (2D top-view) of a section.
  * Shows pole positions as circles with 0.1mm offset for paper cutting.
@@ -39,33 +48,36 @@ export function generateSVGPlan(section: Section, params: Params): string {
     return inX && inZ;
   });
 
-  // SVG dimensions with 10mm padding for label space
-  const padding = 10;
-  const svgW = plateW + 2 * padding;
-  const svgH = plateD + 2 * padding;
+  // SVG dimensions with 10mm padding — converted to px for cutting software compatibility
+  const padding = 10; // mm
+  const svgWmm = plateW + 2 * padding;
+  const svgHmm = plateD + 2 * padding;
+  const svgW = px(svgWmm);
+  const svgH = px(svgHmm);
 
   const lines: string[] = [];
   lines.push(`<?xml version="1.0" encoding="UTF-8"?>`);
+  // viewBox in px (so cutting software gets correct physical size), width/height in mm for human readability
   lines.push(
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${svgW} ${svgH}" width="${svgW}mm" height="${svgH}mm">`
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${svgW} ${svgH}" width="${svgWmm}mm" height="${svgHmm}mm">`
   );
 
-  lines.push(`  <g transform="translate(${padding}, ${padding})">`);
+  lines.push(`  <g transform="translate(${px(padding)}, ${px(padding)})">`);
 
   // Base plate outline
   lines.push(`    <!-- Original base plate (reference) -->`);
   lines.push(
-    `    <rect x="0" y="0" width="${plateW}" height="${plateD}" fill="none" stroke="#000" stroke-width="0.3"/>`
+    `    <rect x="0" y="0" width="${px(plateW)}" height="${px(plateD)}" fill="none" stroke="#000" stroke-width="${px(0.3)}"/>`
   );
 
   // Poles
   lines.push(`    <!-- Poles (with 0.1mm offset) -->`);
   for (const { x, z } of sectionPositions) {
-    const localX = x - plateXMin;
-    const localZ = z - plateZMin;
+    const localX = px(x - plateXMin);
+    const localZ = px(z - plateZMin);
 
     lines.push(
-      `    <circle cx="${localX}" cy="${localZ}" r="${offsetRadius}" fill="none" stroke="#0066cc" stroke-width="0.3" />`
+      `    <circle cx="${localX}" cy="${localZ}" r="${px(offsetRadius)}" fill="none" stroke="#0066cc" stroke-width="${px(0.3)}" />`
     );
   }
 
@@ -89,8 +101,8 @@ export function generateCombinedSVGPlan(params: Params): string {
   const offsetRadius = radius + 0.1;
   const halfPlateX = plateSizeX(params) / 2;
   const halfPlateZ = plateSizeZ(params) / 2;
-  const gap = 10; // 1cm gap between sections
-  const padding = 10;
+  const gap = 10; // mm — 1cm gap between sections
+  const padding = 10; // mm
 
   const allPositions = generatePolePositions(params);
 
@@ -122,7 +134,7 @@ export function generateCombinedSVGPlan(params: Params): string {
     rowHeights.push(plateBounds(s).plateD);
   }
 
-  // Cumulative offsets for each column/row
+  // Cumulative offsets for each column/row (in mm, converted to px when emitting)
   const colOffsets: number[] = [0];
   for (let c = 0; c < nsX - 1; c++) colOffsets.push(colOffsets[c] + colWidths[c] + gap);
   const rowOffsets: number[] = [0];
@@ -130,32 +142,35 @@ export function generateCombinedSVGPlan(params: Params): string {
 
   const totalW = colOffsets[nsX - 1] + colWidths[nsX - 1];
   const totalH = rowOffsets[nsZ - 1] + rowHeights[nsZ - 1];
-  const svgW = totalW + 2 * padding;
-  const svgH = totalH + 2 * padding;
+  const svgWmm = totalW + 2 * padding;
+  const svgHmm = totalH + 2 * padding;
+  const svgW = px(svgWmm);
+  const svgH = px(svgHmm);
 
   const lines: string[] = [];
   lines.push(`<?xml version="1.0" encoding="UTF-8"?>`);
+  // viewBox in px (so cutting software gets correct physical size), width/height in mm for human readability
   lines.push(
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${svgW} ${svgH}" width="${svgW}mm" height="${svgH}mm">`
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${svgW} ${svgH}" width="${svgWmm}mm" height="${svgHmm}mm">`
   );
-  lines.push(`  <g transform="translate(${padding}, ${padding})">`);
+  lines.push(`  <g transform="translate(${px(padding)}, ${px(padding)})">`);
 
   for (const section of sections) {
     const { plateXMin, plateZMin, plateW, plateD } = plateBounds(section);
-    const originX = colOffsets[section.colIdx];
-    const originY = rowOffsets[section.rowIdx];
+    const originX = px(colOffsets[section.colIdx]);
+    const originY = px(rowOffsets[section.rowIdx]);
 
     lines.push(`    <!-- Section ${section.rowIdx + 1}.${section.colIdx + 1} -->`);
     lines.push(`    <g transform="translate(${originX}, ${originY})">`);
 
     // Base plate outline
     lines.push(
-      `      <rect x="0" y="0" width="${plateW}" height="${plateD}" fill="none" stroke="#000" stroke-width="0.3"/>`
+      `      <rect x="0" y="0" width="${px(plateW)}" height="${px(plateD)}" fill="none" stroke="#000" stroke-width="${px(0.3)}"/>`
     );
 
     // Section label
     lines.push(
-      `      <text x="${plateW / 2}" y="${plateD + 4}" text-anchor="middle" font-size="3" fill="#666">${section.rowIdx + 1}.${section.colIdx + 1}</text>`
+      `      <text x="${px(plateW / 2)}" y="${px(plateD + 4)}" text-anchor="middle" font-size="${px(3)}" fill="#666">${section.rowIdx + 1}.${section.colIdx + 1}</text>`
     );
 
     // Filter poles for this section
@@ -173,10 +188,10 @@ export function generateCombinedSVGPlan(params: Params): string {
 
     // Draw poles
     for (const { x, z } of sectionPositions) {
-      const localX = x - plateXMin;
-      const localZ = z - plateZMin;
+      const localX = px(x - plateXMin);
+      const localZ = px(z - plateZMin);
       lines.push(
-        `      <circle cx="${localX}" cy="${localZ}" r="${offsetRadius}" fill="none" stroke="#0066cc" stroke-width="0.3" />`
+        `      <circle cx="${localX}" cy="${localZ}" r="${px(offsetRadius)}" fill="none" stroke="#0066cc" stroke-width="${px(0.3)}" />`
       );
     }
 
