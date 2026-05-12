@@ -11,17 +11,22 @@ function px(mm: number): number {
   return Math.round(mm * MM_TO_PX * 1000) / 1000;
 }
 
+function crossPathData(cx: number, cy: number, halfArm: number): string {
+  return `M ${cx - halfArm},${cy} L ${cx + halfArm},${cy} M ${cx},${cy - halfArm} L ${cx},${cy + halfArm}`;
+}
+
 /**
  * Generates an SVG plan (2D top-view) of a section.
  * Shows pole positions as circles with 0.1mm offset for paper cutting.
  */
-export function generateSVGPlan(section: Section, params: Params): string {
+export function generateSVGPlan(section: Section, params: Params, useCross = false): string {
   const { poleDiameter } = params;
 
   const nsX = numSectionsX(params);
   const nsZ = numSectionsZ(params);
   const radius = poleDiameter / 2;
   const offsetRadius = radius + 0.4; // 0.4mm offset for physical pole fit
+  const crossHalfArm = px((poleDiameter + 5) / 2);
   const halfPlateX = plateSizeX(params) / 2;
   const halfPlateZ = plateSizeZ(params) / 2;
 
@@ -71,14 +76,20 @@ export function generateSVGPlan(section: Section, params: Params): string {
   );
 
   // Poles
-  lines.push(`    <!-- Poles (with 0.2mm offset) -->`);
+  lines.push(`    <!-- Poles -->`);
   for (const { x, z } of sectionPositions) {
     const localX = px(x - plateXMin);
     const localZ = px(z - plateZMin);
 
-    lines.push(
-      `    <circle cx="${localX}" cy="${localZ}" r="${px(offsetRadius)}" fill="none" stroke="#0066cc" stroke-width="${px(0.3)}" />`
-    );
+    if (useCross) {
+      lines.push(
+        `    <path d="${crossPathData(localX, localZ, crossHalfArm)}" fill="none" stroke="#0066cc" stroke-width="${px(0.3)}" stroke-linecap="round"/>`
+      );
+    } else {
+      lines.push(
+        `    <circle cx="${localX}" cy="${localZ}" r="${px(offsetRadius)}" fill="none" stroke="#0066cc" stroke-width="${px(0.3)}" />`
+      );
+    }
   }
 
   lines.push(`  </g>`);
@@ -91,7 +102,7 @@ export function generateSVGPlan(section: Section, params: Params): string {
  * Generates a single SVG file containing all section plans arranged in a grid,
  * with 10mm (1cm) gaps between sections — ready to import into cutting software.
  */
-export function generateCombinedSVGPlan(params: Params): string {
+export function generateCombinedSVGPlan(params: Params, useCross = false): string {
   const { poleDiameter } = params;
 
   const nsX = numSectionsX(params);
@@ -99,6 +110,7 @@ export function generateCombinedSVGPlan(params: Params): string {
   const sections = calculateSections(params);
   const radius = poleDiameter / 2;
   const offsetRadius = radius + 0.4; // 0.4mm offset for physical pole fit
+  const crossHalfArm = px((poleDiameter + 5) / 2);
   const halfPlateX = plateSizeX(params) / 2;
   const halfPlateZ = plateSizeZ(params) / 2;
   const gap = 10; // mm — 1cm gap between sections
@@ -190,9 +202,15 @@ export function generateCombinedSVGPlan(params: Params): string {
     for (const { x, z } of sectionPositions) {
       const localX = px(x - plateXMin);
       const localZ = px(z - plateZMin);
-      lines.push(
-        `      <circle cx="${localX}" cy="${localZ}" r="${px(offsetRadius)}" fill="none" stroke="#0066cc" stroke-width="${px(0.3)}" />`
-      );
+      if (useCross) {
+        lines.push(
+          `      <path d="${crossPathData(localX, localZ, crossHalfArm)}" fill="none" stroke="#0066cc" stroke-width="${px(0.3)}" stroke-linecap="round"/>`
+        );
+      } else {
+        lines.push(
+          `      <circle cx="${localX}" cy="${localZ}" r="${px(offsetRadius)}" fill="none" stroke="#0066cc" stroke-width="${px(0.3)}" />`
+        );
+      }
     }
 
     lines.push(`    </g>`);
