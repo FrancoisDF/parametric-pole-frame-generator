@@ -20,15 +20,19 @@ export async function exportSTL(params: Params): Promise<void> {
 
   geometry.dispose();
 
-  // Generate the SVG plan (single section = full grid)
+  // Generate the SVG plans (circle and cross variants)
   const sections = calculateSections(params);
   const svgContent = sections.length === 1
     ? generateSVGPlan(sections[0], params)
     : generateCombinedSVGPlan(params);
+  const svgCrossContent = sections.length === 1
+    ? generateSVGPlan(sections[0], params, true)
+    : generateCombinedSVGPlan(params, true);
 
   const zip = new JSZip();
   zip.file('pole_frame.stl', stlData);
   zip.file('pole_frame_plan.svg', svgContent);
+  zip.file('pole_frame_plan_cross.svg', svgCrossContent);
 
   const zipBlob = await zip.generateAsync({ type: 'blob' });
   const url = URL.createObjectURL(zipBlob);
@@ -79,15 +83,15 @@ export async function exportSplitAsZip(params: Params): Promise<void> {
       const stlData = new Uint8Array(stlDataView.buffer, stlDataView.byteOffset, stlDataView.byteLength);
       zip.file(`${filePrefix}.stl`, stlData);
 
-      const svgContent = generateSVGPlan(section, params);
-      zip.file(`${filePrefix}_plan.svg`, svgContent);
+      zip.file(`${filePrefix}_plan.svg`, generateSVGPlan(section, params));
+      zip.file(`${filePrefix}_plan_cross.svg`, generateSVGPlan(section, params, true));
 
       geometry.dispose();
     }
 
-    // Add combined SVG with all sections laid out with 1cm gaps
-    const combinedSvg = generateCombinedSVGPlan(params);
-    zip.file(`all_sections_plan.svg`, combinedSvg);
+    // Add combined SVGs with all sections laid out with 1cm gaps
+    zip.file(`all_sections_plan.svg`, generateCombinedSVGPlan(params));
+    zip.file(`all_sections_plan_cross.svg`, generateCombinedSVGPlan(params, true));
 
     const zipBlob = await zip.generateAsync({ type: 'blob' });
     const url = URL.createObjectURL(zipBlob);
