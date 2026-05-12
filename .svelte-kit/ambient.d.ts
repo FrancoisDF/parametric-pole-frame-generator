@@ -41,8 +41,8 @@ declare module '$env/static/private' {
 	export const __MISE_ORIG_PATH: string;
 	export const npm_package_dependencies_zod: string;
 	export const FUSION_ENVIRONMENT: string;
-	export const KUBERNETES_PORT: string;
 	export const KUBERNETES_SERVICE_PORT: string;
+	export const KUBERNETES_PORT: string;
 	export const AI_AGENT: string;
 	export const npm_config_user_agent: string;
 	export const NODE_VERSION: string;
@@ -120,8 +120,8 @@ declare module '$env/static/private' {
 	export const npm_package_dependencies__threlte_core: string;
 	export const npm_config_update_notifier: string;
 	export const NX_REJECT_UNKNOWN_LOCAL_CACHE: string;
-	export const KUBERNETES_PORT_443_TCP: string;
 	export const KUBERNETES_SERVICE_PORT_HTTPS: string;
+	export const KUBERNETES_PORT_443_TCP: string;
 	export const __MISE_ZSH_PRECMD_RUN: string;
 	export const npm_package_dependencies__threlte_extras: string;
 	export const npm_package_dependencies_jszip: string;
@@ -226,8 +226,8 @@ declare module '$env/dynamic/private' {
 		__MISE_ORIG_PATH: string;
 		npm_package_dependencies_zod: string;
 		FUSION_ENVIRONMENT: string;
-		KUBERNETES_PORT: string;
 		KUBERNETES_SERVICE_PORT: string;
+		KUBERNETES_PORT: string;
 		AI_AGENT: string;
 		npm_config_user_agent: string;
 		NODE_VERSION: string;
@@ -305,8 +305,8 @@ declare module '$env/dynamic/private' {
 		npm_package_dependencies__threlte_core: string;
 		npm_config_update_notifier: string;
 		NX_REJECT_UNKNOWN_LOCAL_CACHE: string;
-		KUBERNETES_PORT_443_TCP: string;
 		KUBERNETES_SERVICE_PORT_HTTPS: string;
+		KUBERNETES_PORT_443_TCP: string;
 		__MISE_ZSH_PRECMD_RUN: string;
 		npm_package_dependencies__threlte_extras: string;
 		npm_package_dependencies_jszip: string;
